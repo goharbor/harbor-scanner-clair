@@ -29,21 +29,28 @@ func (h *APIHandler) CreateScan(res http.ResponseWriter, req *http.Request) {
 
 	log.Printf("CreateScan request received\n\t%v", scanRequest)
 
-	err = h.scanner.Scan(scanRequest)
+	scanResponse, err := h.scanner.Scan(scanRequest)
 	if err != nil {
 		http.Error(res, "Internal Server Error", 500)
 		return
 	}
 
 	res.WriteHeader(http.StatusCreated)
+
+	res.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(res).Encode(scanResponse)
+	if err != nil {
+		http.Error(res, "Internal Server Error", 500)
+		return
+	}
 }
 
 func (h *APIHandler) GetScanResult(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	digest, _ := vars["digest"]
-	log.Printf("GetScanResult request received (digest=%s)", digest)
+	detailsKey, _ := vars["detailsKey"]
+	log.Printf("GetScanResult request received (detailsKey=%s)", detailsKey)
 
-	scanResult, err := h.scanner.GetResult(digest)
+	scanResult, err := h.scanner.GetResult(detailsKey)
 	if err != nil {
 		http.Error(res, "Internal Server Error", 500)
 		return

@@ -18,8 +18,11 @@ type ScanRequest struct {
 	Digest        string `json:"digest"`
 }
 
+type ScanResponse struct {
+	DetailsKey string `json:"details_key"`
+}
+
 type ScanResult struct {
-	Digest          string               `json:"digest"`
 	Severity        Severity             `json:"severity"`
 	Overview        *ComponentsOverview  `json:"overview"`
 	Vulnerabilities []*VulnerabilityItem `json:"vulnerabilities"`
