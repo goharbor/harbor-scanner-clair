@@ -1,0 +1,11 @@
+package image
+
+import (
+	"github.com/aquasecurity/harbor-clair-adapter/pkg/model/harbor"
+)
+
+// Scanner defines methods for scanning container images.
+type Scanner interface {
+	Scan(req harbor.ScanRequest) error
+	GetResult(digest string) (*harbor.ScanResult, error)
+}
