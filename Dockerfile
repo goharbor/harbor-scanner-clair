@@ -1,5 +1,5 @@
 FROM scratch
 
-ADD bin/clair-adapter /app/clair-adapter
+ADD bin/scanner-clair /app/scanner-clair
 
-ENTRYPOINT ["/app/clair-adapter"]
+ENTRYPOINT ["/app/scanner-clair"]

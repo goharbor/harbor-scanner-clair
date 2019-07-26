@@ -1,7 +1,7 @@
 package image
 
 import (
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/model/harbor"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
 )
 
 // Scanner defines methods for scanning container images.

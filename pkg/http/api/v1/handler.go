@@ -2,8 +2,8 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/image"
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/model/harbor"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/image"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -17,6 +17,10 @@ func NewAPIHandler(scanner image.Scanner) *APIHandler {
 	return &APIHandler{
 		scanner: scanner,
 	}
+}
+
+func (h *APIHandler) GetVersion(res http.ResponseWriter, req *http.Request) {
+	res.WriteHeader(http.StatusOK)
 }
 
 func (h *APIHandler) CreateScan(res http.ResponseWriter, req *http.Request) {

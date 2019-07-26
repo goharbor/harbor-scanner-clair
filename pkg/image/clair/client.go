@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/model/clair"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/clair"
 	"io/ioutil"
 	"net/http"
 	"strings"

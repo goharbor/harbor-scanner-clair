@@ -3,11 +3,11 @@ package clair
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/image"
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/model/clair"
-	"github.com/aquasecurity/harbor-clair-adapter/pkg/model/harbor"
-	"github.com/danielpacak/docker-registry-client/pkg/auth"
-	"github.com/danielpacak/docker-registry-client/pkg/registry"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/image"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/clair"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/auth"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/registry"
 	"github.com/docker/distribution/manifest/schema2"
 	"log"
 	"strings"
@@ -23,7 +23,6 @@ func NewScanner(clairURL string) (image.Scanner, error) {
 	}, nil
 }
 
-// return detailKey
 func (s *imageScanner) Scan(req harbor.ScanRequest) (*harbor.ScanResponse, error) {
 	layers, err := s.prepareLayers(req)
 	if err != nil {

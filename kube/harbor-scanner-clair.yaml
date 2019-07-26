@@ -1,22 +1,26 @@
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harbor-clair-adapter
+  name: harbor-scanner-clair
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harbor-scanner-clair
   template:
     metadata:
       labels:
-        app: harbor-clair-adapter
+        app: harbor-scanner-clair
     spec:
       containers:
         - name: main
-          image: aquasec/harbor-clair-adapter:poc
+          image: aquasec/harbor-scanner-clair:poc
           imagePullPolicy: IfNotPresent
           env:
-            - name: "ADAPTER_ADDR"
+            - name: "SCANNER_ADDR"
               value: ":8080"
-            - name: "ADAPTER_CLAIR_URL"
+            - name: "SCANNER_CLAIR_URL"
               value: "http://harbor-harbor-clair:6060"
           ports:
             - containerPort: 8080
@@ -24,10 +28,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: harbor-clair-adapter
+  name: harbor-scanner-clair
 spec:
   selector:
-    app: harbor-clair-adapter
+    app: harbor-scanner-clair
   type: LoadBalancer
   ports:
     - protocol: TCP
