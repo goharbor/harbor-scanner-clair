@@ -2,18 +2,18 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/image"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/scanner"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
 
 type APIHandler struct {
-	scanner image.Scanner
+	scanner scanner.Scanner
 }
 
-func NewAPIHandler(scanner image.Scanner) *APIHandler {
+func NewAPIHandler(scanner scanner.Scanner) *APIHandler {
 	return &APIHandler{
 		scanner: scanner,
 	}

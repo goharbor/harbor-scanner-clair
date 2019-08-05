@@ -1,4 +1,4 @@
-package image
+package scanner
 
 import (
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"

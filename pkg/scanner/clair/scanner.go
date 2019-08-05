@@ -3,11 +3,11 @@ package clair
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/image"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/clair"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/auth"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/registry"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/scanner"
 	"github.com/docker/distribution/manifest/schema2"
 	"log"
 	"strings"
@@ -17,7 +17,7 @@ type imageScanner struct {
 	client *Client
 }
 
-func NewScanner(clairURL string) (image.Scanner, error) {
+func NewScanner(clairURL string) (scanner.Scanner, error) {
 	return &imageScanner{
 		client: NewClient(clairURL),
 	}, nil

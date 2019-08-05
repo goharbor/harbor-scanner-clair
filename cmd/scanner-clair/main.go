@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/etc"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/http/api/v1"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/image/clair"
+	"github.com/aquasecurity/harbor-scanner-clair/pkg/scanner/clair"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
