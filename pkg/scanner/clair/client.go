@@ -2,6 +2,7 @@ package clair
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/clair"
@@ -21,7 +22,12 @@ type Client struct {
 func NewClient(endpoint string) *Client {
 	return &Client{
 		endpoint: strings.TrimSuffix(endpoint, "/"),
-		client:   &http.Client{},
+		client: &http.Client{Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				// FIXME Allow configuring custom or self-signed certs rather that skipping verification.
+				InsecureSkipVerify: true,
+			},
+		}},
 	}
 }
 

@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/auth"
 	"github.com/docker/distribution"
@@ -20,8 +21,13 @@ type Client struct {
 func NewClient(registryURL string, authorizer auth.Authorizer) (*Client, error) {
 	return &Client{
 		registryURL: registryURL,
-		client:      http.DefaultClient,
-		authorizer:  authorizer,
+		client: &http.Client{Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				// FIXME Allow configuring custom or self-signed certs rather that skipping verification.
+				InsecureSkipVerify: true,
+			},
+		}},
+		authorizer: authorizer,
 	}, nil
 }
 

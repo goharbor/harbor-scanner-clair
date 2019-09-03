@@ -12,7 +12,7 @@ func GetConfig() (*Config, error) {
 		Addr:     ":8080",
 		ClairURL: "http://harbor-harbor-clair:6060",
 	}
-	if addr, ok := os.LookupEnv("SCANNER_ADDR"); ok {
+	if addr, ok := os.LookupEnv("SCANNER_API_ADDR"); ok {
 		cfg.Addr = addr
 	}
 	if clairURL, ok := os.LookupEnv("SCANNER_CLAIR_URL"); ok {

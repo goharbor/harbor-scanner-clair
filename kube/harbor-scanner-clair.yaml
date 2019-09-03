@@ -18,7 +18,7 @@ spec:
           image: aquasec/harbor-scanner-clair:poc
           imagePullPolicy: IfNotPresent
           env:
-            - name: "SCANNER_ADDR"
+            - name: "SCANNER_API_ADDR"
               value: ":8080"
             - name: "SCANNER_CLAIR_URL"
               value: "http://harbor-harbor-clair:6060"

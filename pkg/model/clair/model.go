@@ -1,11 +1,11 @@
 package clair
 
 const (
-	SeverityNone              = "negligible"
-	SeverityLow               = "low"
-	SeverityMedium            = "medium"
-	SeverityHigh              = "high"
-	SeverityCritical          = "critical"
+	SeverityNone     = "negligible"
+	SeverityLow      = "low"
+	SeverityMedium   = "medium"
+	SeverityHigh     = "high"
+	SeverityCritical = "critical"
 )
 
 // ClairLayer ...
