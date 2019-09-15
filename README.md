@@ -1,3 +1,6 @@
+[![Build Status][ci-img]][ci]
+[![Coverage Status][cov-img]][cov]
+
 # harbor-scanner-clair
 
 This is a POC of an out-of-tree implementation of the Harbor Scanner Adapter API for [Clair](https://github.com/coreos/clair).
@@ -36,10 +39,10 @@ See https://github.com/goharbor/community/pull/90 for more details.
    curl -v http://localhost:8080/api/v1/metadata | jq
    ```
 
-## Run with Docker
-
-```
-$ make container-run
-```
-
 If everything is fine the API will be mounted at [http://localhost:8080/api/v1](http://localhost:8080/api/v1).
+
+[ci-img]: https://travis-ci.org/danielpacak/harbor-scanner-clair.svg?branch=master
+[ci]: https://travis-ci.org/danielpacak/harbor-scanner-clair
+
+[cov-img]: https://codecov.io/github/danielpacak/harbor-scanner-clair/branch/master/graph/badge.svg
+[cov]: https://codecov.io/github/danielpacak/harbor-scanner-clair
