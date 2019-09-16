@@ -4,7 +4,6 @@ import (
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
-	"github.com/goharbor/harbor-scanner-clair/pkg/store/memory"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -24,10 +23,7 @@ func main() {
 	}
 	log.Info("Starting harbor-scanner-clair")
 
-	// TODO Replace with persistent storage. Redis or file system?
-	dataStore := memory.NewDataStore()
-
-	scanner, err := clair.NewScanner(cfg.ClairURL, dataStore)
+	scanner, err := clair.NewScanner(cfg.ClairURL)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}

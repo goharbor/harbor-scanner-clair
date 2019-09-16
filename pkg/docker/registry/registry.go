@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema2"
-	"github.com/goharbor/harbor-scanner-clair/pkg/oci/auth"
+	"github.com/goharbor/harbor-scanner-clair/pkg/docker/auth"
 	"github.com/opencontainers/go-digest"
 	"io"
 	"io/ioutil"

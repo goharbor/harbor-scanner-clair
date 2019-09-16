@@ -10,12 +10,23 @@ const (
 	SevHigh
 )
 
+type Registry struct {
+	URL           string `json:"url"`
+	Authorization string `json:"authorization"`
+}
+
+type Artifact struct {
+	Repository string `json:"repository"`
+	Digest     string `json:"digest"`
+}
+
 type ScanRequest struct {
-	ID                    string `json:"id"`
-	RegistryURL           string `json:"registry_url"`
-	RegistryAuthorization string `json:"registry_authorization"`
-	ArtifactRepository    string `json:"artifact_repository"`
-	ArtifactDigest        string `json:"artifact_digest"`
+	Registry Registry `json:"registry"`
+	Artifact Artifact `json:"artifact"`
+}
+
+type ScanResponse struct {
+	ID string `json:"id"`
 }
 
 type VulnerabilityReport struct {
@@ -37,16 +48,21 @@ type VulnerabilityItem struct {
 	Fixed       string   `json:"fixedVersion,omitempty"`
 }
 
-type ScannerMetadata struct {
-	Name         string        `json:"name"`
-	Vendor       string        `json:"vendor"`
-	Version      string        `json:"version"`
-	Capabilities []*Capability `json:"capabilities"`
+type Scanner struct {
+	Name    string `json:"name"`
+	Vendor  string `json:"vendor"`
+	Version string `json:"version"`
 }
 
 type Capability struct {
-	ArtifactMIMETypes []string `json:"artifact_mime_types"`
-	ReportMIMETypes   []string `json:"report_mime_types"`
+	ConsumesMIMETypes []string `json:"consumes_mime_types"`
+	ProducesMIMETypes []string `json:"produces_mime_types"`
+}
+
+type ScannerMetadata struct {
+	Scanner      Scanner           `json:"scanner"`
+	Capabilities []Capability      `json:"capabilities"`
+	Properties   map[string]string `json:"properties"`
 }
 
 type Error struct {

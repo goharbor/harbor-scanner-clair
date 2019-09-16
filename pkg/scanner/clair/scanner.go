@@ -4,66 +4,63 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/docker/distribution/manifest/schema2"
+	"github.com/goharbor/harbor-scanner-clair/pkg/docker/auth"
+	"github.com/goharbor/harbor-scanner-clair/pkg/docker/registry"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
-	"github.com/goharbor/harbor-scanner-clair/pkg/oci/auth"
-	"github.com/goharbor/harbor-scanner-clair/pkg/oci/registry"
-	"github.com/goharbor/harbor-scanner-clair/pkg/store"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
 // Scanner defines methods for scanning container images.
 type Scanner interface {
-	Scan(req harbor.ScanRequest) error
+	Scan(req harbor.ScanRequest) (*harbor.ScanResponse, error)
 	GetReport(scanRequestID string) (*harbor.VulnerabilityReport, error)
 }
 
 type imageScanner struct {
-	client    *Client
-	dataStore store.DataStore
+	client *Client
 }
 
-func NewScanner(clairURL string, dataStore store.DataStore) (Scanner, error) {
+func NewScanner(clairURL string) (Scanner, error) {
 	return &imageScanner{
-		client:    NewClient(clairURL),
-		dataStore: dataStore,
+		client: NewClient(clairURL),
 	}, nil
 }
 
-func (s *imageScanner) Scan(req harbor.ScanRequest) error {
+func (s *imageScanner) Scan(req harbor.ScanRequest) (*harbor.ScanResponse, error) {
 	layers, err := s.prepareLayers(req)
 	if err != nil {
-		return fmt.Errorf("preparing layers: %v", err)
+		return nil, fmt.Errorf("preparing layers: %v", err)
 	}
 
 	for _, l := range layers {
 		log.Debugf("Scanning Layer: %s, path: %s", l.Name, l.Path)
 		if err := s.client.ScanLayer(l); err != nil {
 			log.Debugf("Failed to scan layer: %s, error: %v", l.Name, err)
-			return err
+			return nil, err
 		}
 	}
 
 	layerName := layers[len(layers)-1].Name
 
-	return s.dataStore.Set(req.ID, layerName)
+	return &harbor.ScanResponse{ID: layerName}, nil
 }
 
 func (s *imageScanner) prepareLayers(req harbor.ScanRequest) ([]clair.ClairLayer, error) {
 	layers := make([]clair.ClairLayer, 0)
 
-	client, err := registry.NewClient(req.RegistryURL, auth.NewBearerTokenAuthorizer(req.RegistryAuthorization))
+	client, err := registry.NewClient(req.Registry.URL, auth.NewBearerTokenAuthorizer(req.Registry.Authorization))
 	if err != nil {
 		return nil, fmt.Errorf("constructing registry client: %v", err)
 	}
 
-	manifest, _, err := client.Manifest(req.ArtifactRepository, req.ArtifactDigest)
+	manifest, _, err := client.Manifest(req.Artifact.Repository, req.Artifact.Digest)
 	if err != nil {
 		return nil, err
 	}
 
-	tokenHeader := map[string]string{"Connection": "close", "Authorization": fmt.Sprintf("Bearer %s", req.RegistryAuthorization)}
+	tokenHeader := map[string]string{"Connection": "close", "Authorization": fmt.Sprintf("Bearer %s", req.Registry.Authorization)}
 	// form the chain by using the digests of all parent layers in the image, such that if another image is built on top of this image the layer name can be re-used.
 	shaChain := ""
 	for _, d := range manifest.References() {
@@ -75,7 +72,7 @@ func (s *imageScanner) prepareLayers(req harbor.ScanRequest) ([]clair.ClairLayer
 			Name:    fmt.Sprintf("%x", sha256.Sum256([]byte(shaChain))),
 			Headers: tokenHeader,
 			Format:  "Docker",
-			Path:    s.buildBlobURL(req.RegistryURL, req.ArtifactRepository, string(d.Digest)),
+			Path:    s.buildBlobURL(req.Registry.URL, req.Artifact.Repository, string(d.Digest)),
 		}
 		if len(layers) > 0 {
 			l.ParentName = layers[len(layers)-1].Name
@@ -107,14 +104,9 @@ func (s *imageScanner) parseClairSev(clairSev string) harbor.Severity {
 }
 
 func (s *imageScanner) GetReport(scanRequestID string) (*harbor.VulnerabilityReport, error) {
-	layerName, err := s.dataStore.Get(scanRequestID)
+	res, err := s.client.GetResult(scanRequestID)
 	if err != nil {
-		return nil, err
-	}
-
-	res, err := s.client.GetResult(layerName)
-	if err != nil {
-		log.Printf("Failed to get result from Clair, error: %v", err)
+		log.Errorf("Failed to get result from Clair, error: %v", err)
 		return nil, err
 	}
 
@@ -153,7 +145,7 @@ func (s *imageScanner) toComponentsOverview(clairVuln *clair.ClairLayerEnvelope)
 
 // transformVulnerabilities transforms the returned value of Clair API to a list of VulnerabilityItem
 func (s *imageScanner) toVulnerabilityItems(layerWithVuln *clair.ClairLayerEnvelope) []*harbor.VulnerabilityItem {
-	res := []*harbor.VulnerabilityItem{}
+	var res []*harbor.VulnerabilityItem
 	l := layerWithVuln.Layer
 	if l == nil {
 		return res
