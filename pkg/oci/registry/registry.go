@@ -3,9 +3,9 @@ package registry
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/auth"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema2"
+	"github.com/goharbor/harbor-scanner-clair/pkg/oci/auth"
 	"github.com/opencontainers/go-digest"
 	"io"
 	"io/ioutil"

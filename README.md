@@ -3,14 +3,13 @@
 
 # harbor-scanner-clair
 
-This is a POC of an out-of-tree implementation of the Harbor Scanner Adapter API for [Clair](https://github.com/coreos/clair).
+This is a POC of an out-of-tree implementation of the Harbor Scanner Adapter API for [Clair][clair-url].
 See https://github.com/goharbor/community/pull/90 for more details.
 
 ## TOC
 
 * [Configuration](#configuration)
 * [Deploy to minikube](#deploy-to-minikube)
-* [Run with Docker](#run-with-docker)
 
 ## Configuration
 
@@ -46,3 +45,5 @@ If everything is fine the API will be mounted at [http://localhost:8080/api/v1](
 
 [cov-img]: https://codecov.io/github/danielpacak/harbor-scanner-clair/branch/master/graph/badge.svg
 [cov]: https://codecov.io/github/danielpacak/harbor-scanner-clair
+
+[clair-url]: https://github.com/coreos/clair

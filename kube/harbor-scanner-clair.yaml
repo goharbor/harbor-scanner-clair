@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: main
-          image: danielpacak/harbor-scanner-clair:poc
+          image: goharbor/harbor-scanner-clair:poc
           imagePullPolicy: IfNotPresent
           env:
             - name: "SCANNER_API_ADDR"

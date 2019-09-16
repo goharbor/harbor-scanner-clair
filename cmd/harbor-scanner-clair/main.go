@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/etc"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/http/api/v1"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/scanner/clair"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/store/memory"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
+	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/store/memory"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -22,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
-	log.Infof("Starting harbor-scanner-clair with config %v", cfg)
+	log.Info("Starting harbor-scanner-clair")
 
 	// TODO Replace with persistent storage. Redis or file system?
 	dataStore := memory.NewDataStore()
@@ -34,7 +34,7 @@ func main() {
 
 	apiHandler := v1.NewAPIHandler(scanner)
 
-	err = http.ListenAndServe(cfg.Addr, apiHandler)
+	err = http.ListenAndServe(cfg.APIAddr, apiHandler)
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Error: %v", err)
 	}

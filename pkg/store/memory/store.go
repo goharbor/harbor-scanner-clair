@@ -2,7 +2,7 @@ package memory
 
 import (
 	"errors"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/store"
+	"github.com/goharbor/harbor-scanner-clair/pkg/store"
 )
 
 type memoryStore struct {

@@ -3,12 +3,12 @@ package clair
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/clair"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/auth"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/oci/registry"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/store"
 	"github.com/docker/distribution/manifest/schema2"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/oci/auth"
+	"github.com/goharbor/harbor-scanner-clair/pkg/oci/registry"
+	"github.com/goharbor/harbor-scanner-clair/pkg/store"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )

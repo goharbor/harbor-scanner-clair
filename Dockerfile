@@ -1,5 +1,5 @@
 FROM scratch
 
-ADD bin/scanner-clair /app/scanner-clair
+ADD bin/harbor-scanner-clair /harbor-scanner-clair
 
-ENTRYPOINT ["/app/scanner-clair"]
+ENTRYPOINT ["/harbor-scanner-clair"]

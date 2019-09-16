@@ -2,8 +2,8 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/harbor"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/scanner/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"

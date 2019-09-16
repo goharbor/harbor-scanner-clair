@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/aquasecurity/harbor-scanner-clair/pkg/model/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
 	"io/ioutil"
 	"net/http"
 	"strings"
