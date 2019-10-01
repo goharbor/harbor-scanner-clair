@@ -11,11 +11,11 @@ func TestGetConfig(t *testing.T) {
 	testCases := []struct {
 		Name           string
 		Envs           map[string]string
-		ExpectedConfig *Config
+		ExpectedConfig Config
 	}{
 		{
 			Name: "Should return default config",
-			ExpectedConfig: &Config{
+			ExpectedConfig: Config{
 				APIAddr:  ":8080",
 				ClairURL: "http://harbor-harbor-clair:6060",
 			},
@@ -26,7 +26,7 @@ func TestGetConfig(t *testing.T) {
 				"SCANNER_API_ADDR":  ":7654",
 				"SCANNER_CLAIR_URL": "https://demo.clair:7080",
 			},
-			ExpectedConfig: &Config{
+			ExpectedConfig: Config{
 				APIAddr:  ":7654",
 				ClairURL: "https://demo.clair:7080",
 			},

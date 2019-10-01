@@ -1,22 +1,15 @@
 package etc
 
-import "os"
+import (
+	"github.com/caarlos0/env/v6"
+)
 
 type Config struct {
-	APIAddr  string
-	ClairURL string
+	APIAddr  string `env:"SCANNER_API_ADDR" envDefault:":8080"`
+	ClairURL string `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
 }
 
-func GetConfig() (*Config, error) {
-	cfg := &Config{
-		APIAddr:  ":8080",
-		ClairURL: "http://harbor-harbor-clair:6060",
-	}
-	if addr, ok := os.LookupEnv("SCANNER_API_ADDR"); ok {
-		cfg.APIAddr = addr
-	}
-	if clairURL, ok := os.LookupEnv("SCANNER_CLAIR_URL"); ok {
-		cfg.ClairURL = clairURL
-	}
-	return cfg, nil
+func GetConfig() (cfg Config, err error) {
+	err = env.Parse(&cfg)
+	return
 }

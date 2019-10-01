@@ -8,29 +8,31 @@ const (
 	SeverityCritical = "critical"
 )
 
-// ClairLayer ...
-type ClairLayer struct {
+// Layer is one of the tarballs used in the composition of an image, often expressed as a filesystem delta from
+// another layer.
+type Layer struct {
 	Name           string            `json:"Name,omitempty"`
 	NamespaceNames []string          `json:"NamespaceNames,omitempty"`
 	Path           string            `json:"Path,omitempty"`
 	Headers        map[string]string `json:"Headers,omitempty"`
 	ParentName     string            `json:"ParentName,omitempty"`
 	Format         string            `json:"Format,omitempty"`
-	Features       []ClairFeature    `json:"Features,omitempty"`
+	Features       []Feature         `json:"Features,omitempty"`
 }
 
-// ClairFeature ...
-type ClairFeature struct {
-	Name            string               `json:"Name,omitempty"`
-	NamespaceName   string               `json:"NamespaceName,omitempty"`
-	VersionFormat   string               `json:"VersionFormat,omitempty"`
-	Version         string               `json:"Version,omitempty"`
-	Vulnerabilities []ClairVulnerability `json:"Vulnerabilities,omitempty"`
-	AddedBy         string               `json:"AddedBy,omitempty"`
+// Feature anything that when present in a filesystem could be an indication of a vulnerability (e.g. the presence
+// of a file or an installed software package).
+type Feature struct {
+	Name            string          `json:"Name,omitempty"`
+	NamespaceName   string          `json:"NamespaceName,omitempty"`
+	VersionFormat   string          `json:"VersionFormat,omitempty"`
+	Version         string          `json:"Version,omitempty"`
+	Vulnerabilities []Vulnerability `json:"Vulnerabilities,omitempty"`
+	AddedBy         string          `json:"AddedBy,omitempty"`
 }
 
-// ClairVulnerability ...
-type ClairVulnerability struct {
+// Vulnerability ...
+type Vulnerability struct {
 	Name          string                 `json:"Name,omitempty"`
 	NamespaceName string                 `json:"NamespaceName,omitempty"`
 	Description   string                 `json:"Description,omitempty"`
@@ -38,16 +40,16 @@ type ClairVulnerability struct {
 	Severity      string                 `json:"Severity,omitempty"`
 	Metadata      map[string]interface{} `json:"Metadata,omitempty"`
 	FixedBy       string                 `json:"FixedBy,omitempty"`
-	FixedIn       []ClairFeature         `json:"FixedIn,omitempty"`
+	FixedIn       []Feature              `json:"FixedIn,omitempty"`
 }
 
-// ClairError ...
-type ClairError struct {
+// Error ...
+type Error struct {
 	Message string `json:"Message,omitempty"`
 }
 
-// ClairLayerEnvelope ...
-type ClairLayerEnvelope struct {
-	Layer *ClairLayer `json:"Layer,omitempty"`
-	Error *ClairError `json:"Error,omitempty"`
+// LayerEnvelope ...
+type LayerEnvelope struct {
+	Layer *Layer `json:"Layer,omitempty"`
+	Error *Error `json:"Error,omitempty"`
 }

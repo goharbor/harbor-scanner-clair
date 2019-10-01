@@ -1,14 +1,46 @@
 package harbor
 
+import (
+	"bytes"
+	"time"
+)
+
 // Sevxxx is the list of severity of image after scanning.
 const (
 	_ Severity = iota
 	SevNone
 	SevUnknown
+	SevNegligible
 	SevLow
 	SevMedium
 	SevHigh
+	SevCritical
 )
+
+// Severity represents the severity of a image/component in terms of vulnerability.
+type Severity int
+
+func (s Severity) String() string {
+	return severityToString[s]
+}
+
+var severityToString = map[Severity]string{
+	SevNone:       "None",
+	SevUnknown:    "Unknown",
+	SevNegligible: "Negligible",
+	SevLow:        "Low",
+	SevMedium:     "Medium",
+	SevHigh:       "High",
+	SevCritical:   "Critical",
+}
+
+// MarshalJSON marshals the enum as a quoted json string
+func (s Severity) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(severityToString[s])
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
 
 type Registry struct {
 	URL           string `json:"url"`
@@ -18,6 +50,7 @@ type Registry struct {
 type Artifact struct {
 	Repository string `json:"repository"`
 	Digest     string `json:"digest"`
+	MimeType   string `json:"mime_type"`
 }
 
 type ScanRequest struct {
@@ -30,22 +63,22 @@ type ScanResponse struct {
 }
 
 type VulnerabilityReport struct {
-	Severity        Severity             `json:"severity"`
-	Vulnerabilities []*VulnerabilityItem `json:"vulnerabilities"`
+	GeneratedAt     time.Time           `json:"generated_at"`
+	Artifact        Artifact            `json:"artifact"`
+	Scanner         Scanner             `json:"scanner"`
+	Severity        Severity            `json:"severity"`
+	Vulnerabilities []VulnerabilityItem `json:"vulnerabilities"`
 }
-
-// Severity represents the severity of a image/component in terms of vulnerability.
-type Severity int64
 
 // VulnerabilityItem is an item in the vulnerability result returned by vulnerability details API.
 type VulnerabilityItem struct {
 	ID          string   `json:"id"`
-	Severity    Severity `json:"severity"`
 	Pkg         string   `json:"package"`
 	Version     string   `json:"version"`
+	FixVersion  string   `json:"fix_version,omitempty"`
+	Severity    Severity `json:"severity"`
 	Description string   `json:"description"`
-	Link        string   `json:"link"`
-	Fixed       string   `json:"fixedVersion,omitempty"`
+	Links       []string `json:"links"`
 }
 
 type Scanner struct {
@@ -55,8 +88,8 @@ type Scanner struct {
 }
 
 type Capability struct {
-	ConsumesMIMETypes []string `json:"consumes_mime_types"`
-	ProducesMIMETypes []string `json:"produces_mime_types"`
+	ConsumesMimeTypes []string `json:"consumes_mime_types"`
+	ProducesMimeTypes []string `json:"produces_mime_types"`
 }
 
 type ScannerMetadata struct {
@@ -65,6 +98,8 @@ type ScannerMetadata struct {
 	Properties   map[string]string `json:"properties"`
 }
 
+// Error holds the information about an error, including metadata about its JSON structure.
 type Error struct {
-	Message string `json:"message"`
+	HTTPCode int    `json:"-"`
+	Message  string `json:"message"`
 }
