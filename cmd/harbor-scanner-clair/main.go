@@ -10,17 +10,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 )
 
-func init() {
+func main() {
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(etc.GetLogLevel())
 	log.SetReportCaller(false)
 	log.SetFormatter(&log.JSONFormatter{})
-}
 
-func main() {
 	cfg, err := etc.GetConfig()
 	if err != nil {
 		log.Fatalf("Error: %v", err)
@@ -38,8 +35,8 @@ func main() {
 	server := http.Server{
 		Handler:      apiHandler,
 		Addr:         cfg.APIAddr,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
 	}
 
 	shutdownComplete := make(chan struct{})
@@ -47,13 +44,13 @@ func main() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt, os.Kill)
 		captured := <-sigint
-		log.Debugf("Trapped os signal %v", captured)
+		log.WithField("signal", captured.String()).Debug("Trapped os signal")
 
-		log.Debug("Graceful shutdown started")
+		log.Debug("API server shutdown started")
 		if err := server.Shutdown(context.Background()); err != nil {
 			log.WithError(err).Error("Error while shutting down server")
 		}
-		log.Debug("Graceful shutdown completed")
+		log.Debug("API server shutdown completed")
 		close(shutdownComplete)
 	}()
 

@@ -13,10 +13,13 @@ See https://github.com/goharbor/community/pull/90 for more details.
 
 ## Configuration
 
-| Name                | Default Value            | Description |
-|---------------------|--------------------------|-------------|
-| `SCANNER_API_ADDR`  | `:8080`                  | Binding address for the API HTTP server. |
-| `SCANNER_CLAIR_URL` | `http://harbor-harbor-clair:6060` | Clair URL |
+| Name | Default Value | Description |
+|------|---------------|-------------|
+| `SCANNER_LOG_LEVEL`                | `info` | The log level of `trace`, `debug`, `info`, `warn`, `warning`, `error`, `fatal` or `panic`. The standard logger logs entries with that level or anything above it. |
+| `SCANNER_API_SERVER_ADDR`          | `:8080` | Binding address for the API HTTP server. |
+| `SCANNER_API_SERVER_READ_TIMEOUT`  | `15s` | The maximum duration for reading the entire request, including the body. |
+| `SCANNER_API_SERVER_WRITE_TIMEOUT` | `15s` | The maximum duration before timing out writes of the response. |
+| `SCANNER_CLAIR_URL`                | `http://harbor-harbor-clair:6060` | Clair URL |
 
 ## Deploy to minikube
 
