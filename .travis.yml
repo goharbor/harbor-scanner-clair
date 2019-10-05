@@ -1,16 +1,32 @@
 language: go
+go:
+  - "1.12"
+
+git:
+  depth: 1
+
 services:
   - docker
+
 env:
   matrix:
     - GO111MODULE=on
-go:
-  - 1.12.x
-git:
-  depth: 1
-notifications:
-  email: false
+
 script:
-  - make tests
+  - make test
+  - curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish --rm-dist
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
+  - test -n "$TRAVIS_TAG" && docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_TOKEN"
+
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script: curl -sL https://git.io/goreleaser | bash -s -- --rm-dist
+    on:
+      tags: true
+      condition: $TRAVIS_OS_NAME = linux
+
+notifications:
+  email: false
