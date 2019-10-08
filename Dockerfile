@@ -1,5 +1,5 @@
 FROM scratch
 
-ADD scanner-clair /scanner-clair
+COPY scanner-clair /scanner-clair
 
-ENTRYPOINT ["/harbor-scanner-clair"]
+ENTRYPOINT ["/scanner-clair"]
