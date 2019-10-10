@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: main
-          image: goharbor/harbor-scanner-clair:poc
+          image: goharbor/harbor-scanner-clair:dev
           imagePullPolicy: IfNotPresent
           env:
             - name: "SCANNER_LOG_LEVEL"
@@ -50,7 +50,7 @@ spec:
               port: api-server-port
             initialDelaySeconds: 5
             periodSeconds: 10
-            failureThreshold: 3
+            failureThreshold: 10
           readinessProbe:
             httpGet:
               path: /probe/ready

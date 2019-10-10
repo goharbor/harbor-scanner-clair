@@ -120,6 +120,5 @@ func (h *requestHandler) GetHealthy(res http.ResponseWriter, req *http.Request) 
 }
 
 func (h *requestHandler) GetReady(res http.ResponseWriter, req *http.Request) {
-	// We might want to ping Clair but for now I keep it simple.
 	res.WriteHeader(http.StatusOK)
 }

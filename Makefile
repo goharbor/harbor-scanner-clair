@@ -1,6 +1,6 @@
 SOURCES := $(shell find . -name '*.go')
 BINARY := scanner-clair
-IMAGE_TAG := poc
+IMAGE_TAG := dev
 IMAGE := goharbor/harbor-scanner-clair:$(IMAGE_TAG)
 
 build: $(BINARY)
