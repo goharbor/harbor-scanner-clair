@@ -1,0 +1,17 @@
+clair:
+  database:
+    type: pgsql
+    options:
+      source: host=postgres port=5432 user=postgres sslmode=disable statement_timeout=60000
+      cachesize: 16384
+  api:
+    port: 6060
+    healthport: 6061
+    timeout: 300s
+  updater:
+    interval: 12h
+  notifier:
+    attempts: 3
+    renotifyinterval: 2h
+    http:
+      endpoint:

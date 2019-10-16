@@ -46,7 +46,6 @@ func (h *requestHandler) logRequest(next http.Handler) http.Handler {
 	})
 }
 
-// TODO Currently this method is blocking. In the final version it should just enqueue a scan job and return immediately.
 func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Request) {
 	scanRequest := harbor.ScanRequest{}
 	err := json.NewDecoder(req.Body).Decode(&scanRequest)
