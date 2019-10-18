@@ -7,11 +7,20 @@ import (
 	"time"
 )
 
-type Config struct {
-	APIAddr      string        `env:"SCANNER_API_ADDR" envDefault:":8080"`
-	ReadTimeout  time.Duration `env:"SCANNER_API_SERVER_READ_TIMEOUT" envDefault:"15s"`
-	WriteTimeout time.Duration `env:"SCANNER_API_SERVER_WRITE_TIMEOUT" envDefault:"15s"`
-	ClairURL     string        `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
+type APIConfig struct {
+	Addr           string        `env:"SCANNER_API_SERVER_ADDR" envDefault:":8080"`
+	TLSCertificate string        `env:"SCANNER_API_SERVER_TLS_CERTIFICATE"`
+	TLSKey         string        `env:"SCANNER_API_SERVER_TLS_KEY"`
+	ReadTimeout    time.Duration `env:"SCANNER_API_SERVER_READ_TIMEOUT" envDefault:"15s"`
+	WriteTimeout   time.Duration `env:"SCANNER_API_SERVER_WRITE_TIMEOUT" envDefault:"15s"`
+}
+
+func (c *APIConfig) IsTLSEnabled() bool {
+	return c.TLSCertificate != "" && c.TLSKey != ""
+}
+
+type ClairConfig struct {
+	URL string `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
 }
 
 func GetLogLevel() logrus.Level {
@@ -25,7 +34,12 @@ func GetLogLevel() logrus.Level {
 	return logrus.InfoLevel
 }
 
-func GetConfig() (cfg Config, err error) {
+func GetAPIConfig() (cfg APIConfig, err error) {
+	err = env.Parse(&cfg)
+	return
+}
+
+func GetClairConfig() (cfg ClairConfig, err error) {
 	err = env.Parse(&cfg)
 	return
 }

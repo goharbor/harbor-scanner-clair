@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
@@ -12,32 +13,44 @@ import (
 	"os/signal"
 )
 
+var (
+	// Default wise GoReleaser sets three ldflags:
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	log.SetOutput(os.Stdout)
 	log.SetLevel(etc.GetLogLevel())
 	log.SetReportCaller(false)
 	log.SetFormatter(&log.JSONFormatter{})
 
-	cfg, err := etc.GetConfig()
+	log.WithFields(log.Fields{
+		"version":  version,
+		"commit":   commit,
+		"built_at": date,
+	}).Info("Starting harbor-scanner-clair")
+
+	clairConfig, err := etc.GetClairConfig()
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
-	log.Info("Starting harbor-scanner-clair")
 
-	client := clair.NewClient(cfg.ClairURL)
+	client := clair.NewClient(clairConfig.URL)
 	scanner, err := clair.NewScanner(client, model.NewTransformer())
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	apiConfig, err := etc.GetAPIConfig()
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
 
 	apiHandler := v1.NewAPIHandler(scanner)
 
-	server := http.Server{
-		Handler:      apiHandler,
-		Addr:         cfg.APIAddr,
-		ReadTimeout:  cfg.ReadTimeout,
-		WriteTimeout: cfg.WriteTimeout,
-	}
+	server := api.NewServer(apiConfig, apiHandler)
 
 	shutdownComplete := make(chan struct{})
 	go func() {

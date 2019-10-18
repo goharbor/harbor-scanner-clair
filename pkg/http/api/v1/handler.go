@@ -75,7 +75,6 @@ func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Re
 func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	scanRequestID, _ := vars[pathVarScanRequestID]
-	log.Debugf("Handling get scan report request: %s", scanRequestID)
 
 	scanReport, err := h.scanner.GetReport(scanRequestID)
 	if err != nil {

@@ -9,8 +9,8 @@ spec:
   type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 8080
-      targetPort: 8080
+      port: 8443
+      targetPort: 8443
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -34,7 +34,11 @@ spec:
             - name: "SCANNER_LOG_LEVEL"
               value: "info"
             - name: "SCANNER_API_SERVER_ADDR"
-              value: ":8080"
+              value: ":8443"
+            - name: "SCANNER_API_SERVER_TLS_CERTIFICATE"
+              value: "/certs/tls.crt"
+            - name: "SCANNER_API_SERVER_TLS_KEY"
+              value: "/certs/tls.key"
             - name: "SCANNER_API_SERVER_READ_TIMEOUT"
               value: "15s"
             - name: "SCANNER_API_SERVER_WRITE_TIMEOUT"
@@ -43,18 +47,28 @@ spec:
               value: "http://harbor-harbor-clair:6060"
           ports:
             - name: api-server-port
-              containerPort: 8080
+              containerPort: 8443
           livenessProbe:
             httpGet:
-              path: /probe/healthy
+              scheme: HTTPS
               port: api-server-port
+              path: /probe/healthy
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 10
           readinessProbe:
             httpGet:
-              path: /probe/ready
+              scheme: HTTPS
               port: api-server-port
+              path: /probe/ready
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
+          volumeMounts:
+            - mountPath: /certs
+              name: certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: harbor-scanner-clair-tls
