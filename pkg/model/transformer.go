@@ -16,7 +16,7 @@ func (c *systemClock) Now() time.Time {
 }
 
 type Transformer interface {
-	Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.VulnerabilityReport
+	Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.ScanReport
 }
 
 type transformer struct {
@@ -31,8 +31,8 @@ func NewTransformer() *transformer {
 	}
 }
 
-func (t *transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.VulnerabilityReport {
-	return harbor.VulnerabilityReport{
+func (t *transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.ScanReport {
+	return harbor.ScanReport{
 		GeneratedAt:     t.clock.Now(),
 		Scanner:         etc.GetScannerMetadata(),
 		Artifact:        req.Artifact,

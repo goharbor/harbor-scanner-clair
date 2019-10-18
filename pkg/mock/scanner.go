@@ -18,7 +18,7 @@ func (s *Scanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error) {
 	return args.Get(0).(harbor.ScanResponse), args.Error(1)
 }
 
-func (s *Scanner) GetReport(scanRequestID string) (harbor.VulnerabilityReport, error) {
+func (s *Scanner) GetReport(scanRequestID string) (harbor.ScanReport, error) {
 	args := s.Called(scanRequestID)
-	return args.Get(0).(harbor.VulnerabilityReport), args.Error(1)
+	return args.Get(0).(harbor.ScanReport), args.Error(1)
 }

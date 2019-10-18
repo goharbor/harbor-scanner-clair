@@ -14,7 +14,7 @@ import (
 // Scanner defines methods for scanning container images.
 type Scanner interface {
 	Scan(req harbor.ScanRequest) (harbor.ScanResponse, error)
-	GetReport(scanRequestID string) (harbor.VulnerabilityReport, error)
+	GetReport(scanRequestID string) (harbor.ScanReport, error)
 }
 
 type imageScanner struct {
@@ -95,10 +95,10 @@ func (s *imageScanner) buildBlobURL(endpoint, repository, digest string) string 
 	return fmt.Sprintf("%s/v2/%s/blobs/%s", endpoint, repository, digest)
 }
 
-func (s *imageScanner) GetReport(layerName string) (harbor.VulnerabilityReport, error) {
+func (s *imageScanner) GetReport(layerName string) (harbor.ScanReport, error) {
 	res, err := s.client.GetLayer(layerName)
 	if err != nil {
-		return harbor.VulnerabilityReport{}, fmt.Errorf("getting layer %s: %v", layerName, err)
+		return harbor.ScanReport{}, fmt.Errorf("getting layer %s: %v", layerName, err)
 	}
 
 	scanReport := s.transformer.Transform(harbor.ScanRequest{}, *res)

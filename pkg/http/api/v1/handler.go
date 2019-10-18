@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -59,6 +60,12 @@ func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Re
 		return
 	}
 
+	if validationError := h.validate(scanRequest); validationError != nil {
+		log.Errorf("Error while validating scan request: %s", validationError.Message)
+		h.WriteJSONError(res, *validationError)
+		return
+	}
+
 	scanResponse, err := h.scanner.Scan(scanRequest)
 	if err != nil {
 		log.WithError(err).Error("Error while performing scan")
@@ -70,6 +77,39 @@ func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Re
 	}
 
 	h.WriteJSON(res, scanResponse, api.MimeTypeScanResponse, http.StatusAccepted)
+}
+
+func (h *requestHandler) validate(req harbor.ScanRequest) *harbor.Error {
+	if req.Registry.URL == "" {
+		return &harbor.Error{
+			HTTPCode: http.StatusUnprocessableEntity,
+			Message:  "missing registry.url",
+		}
+	}
+
+	_, err := url.ParseRequestURI(req.Registry.URL)
+	if err != nil {
+		return &harbor.Error{
+			HTTPCode: http.StatusUnprocessableEntity,
+			Message:  "invalid registry.url",
+		}
+	}
+
+	if req.Artifact.Repository == "" {
+		return &harbor.Error{
+			HTTPCode: http.StatusUnprocessableEntity,
+			Message:  "missing artifact.repository",
+		}
+	}
+
+	if req.Artifact.Digest == "" {
+		return &harbor.Error{
+			HTTPCode: http.StatusUnprocessableEntity,
+			Message:  "missing artifact.digest",
+		}
+	}
+
+	return nil
 }
 
 func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Request) {

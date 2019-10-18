@@ -62,7 +62,7 @@ type ScanResponse struct {
 	ID string `json:"id"`
 }
 
-type VulnerabilityReport struct {
+type ScanReport struct {
 	GeneratedAt     time.Time           `json:"generated_at"`
 	Artifact        Artifact            `json:"artifact"`
 	Scanner         Scanner             `json:"scanner"`

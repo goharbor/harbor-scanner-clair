@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/mock"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/stretchr/testify/assert"
@@ -92,14 +93,37 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 			name:                "Should respond with error 400 when scan request cannot be parsed",
 			requestBody:         "THIS AIN'T PARSE",
 			expectedStatus:      http.StatusBadRequest,
-			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
-			expectedResponse: `{
-  "error": {
-    "message": "unmarshalling scan request: invalid character 'T' looking for beginning of value"
-  }
-}`,
+			expectedContentType: api.MimeTypeError.String(),
+			expectedResponse:    errorJSON("unmarshalling scan request: invalid character 'T' looking for beginning of value"),
 		},
-
+		{
+			name:                "Should respond with error 422 when scan request's registry URL is blank",
+			requestBody:         `{"registry":{}}`,
+			expectedStatus:      http.StatusUnprocessableEntity,
+			expectedContentType: api.MimeTypeError.String(),
+			expectedResponse:    errorJSON("missing registry.url"),
+		},
+		{
+			name:                "Should respond with error 422 when scan request's registry URL is invalid",
+			requestBody:         `{"registry":{"url":"INVALID URL"}}`,
+			expectedStatus:      http.StatusUnprocessableEntity,
+			expectedContentType: api.MimeTypeError.String(),
+			expectedResponse:    errorJSON("invalid registry.url"),
+		},
+		{
+			name:                "Should respond with error 422 when scan request's artifact repository is blank",
+			requestBody:         `{"registry":{"url":"https://core.harbor.domain"}}`,
+			expectedStatus:      http.StatusUnprocessableEntity,
+			expectedContentType: api.MimeTypeError.String(),
+			expectedResponse:    errorJSON("missing artifact.repository"),
+		},
+		{
+			name:                "Should respond with error 422 when scan request's artifact digest is blank",
+			requestBody:         `{"registry":{"url":"https://core.harbor.domain"}, "artifact":{"repository":"library/mongo"}}`,
+			expectedStatus:      http.StatusUnprocessableEntity,
+			expectedContentType: api.MimeTypeError.String(),
+			expectedResponse:    errorJSON("missing artifact.digest"),
+		},
 		{
 			name: "Should respond with error 500 when scan fails",
 			scannerExpectation: &mock.Expectation{
@@ -110,11 +134,7 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 			requestBody:         validScanRequestJSON,
 			expectedStatus:      http.StatusInternalServerError,
 			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
-			expectedResponse: `{
-  "error": {
-    "message": "performing scan: clair is down"
-  }
-}`,
+			expectedResponse:    errorJSON("performing scan: clair is down"),
 		},
 	}
 
@@ -155,7 +175,7 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 			scannerExpectation: &mock.Expectation{
 				Method:     "GetReport",
 				Args:       []interface{}{"sr:123"},
-				ReturnArgs: []interface{}{harbor.VulnerabilityReport{}, errors.New("boom")},
+				ReturnArgs: []interface{}{harbor.ScanReport{}, errors.New("boom")},
 			},
 			expectedStatus:      http.StatusInternalServerError,
 			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
@@ -170,7 +190,7 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 			scannerExpectation: &mock.Expectation{
 				Method: "GetReport",
 				Args:   []interface{}{"sr:123"},
-				ReturnArgs: []interface{}{harbor.VulnerabilityReport{
+				ReturnArgs: []interface{}{harbor.ScanReport{
 					GeneratedAt: now,
 					Artifact: harbor.Artifact{
 						Repository: "library/mongo",
@@ -286,4 +306,8 @@ func TestRequestHandler_GetMetadata(t *testing.T) {
   }
 }`, rr.Body.String())
 	scanner.AssertExpectations(t)
+}
+
+func errorJSON(message string) string {
+	return fmt.Sprintf(`{"error":{"message":"%s"}}`, message)
 }

@@ -65,7 +65,7 @@ func TestTransformer_Transform(t *testing.T) {
 		},
 	}
 	scanReport := transformer.Transform(scanRequest, source)
-	assert.Equal(t, harbor.VulnerabilityReport{
+	assert.Equal(t, harbor.ScanReport{
 		GeneratedAt: fixedTime,
 		Artifact: harbor.Artifact{
 			Repository: "library/cassandra",

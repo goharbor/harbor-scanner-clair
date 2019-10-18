@@ -14,7 +14,7 @@ func NewTransformer() *Transformer {
 	return &Transformer{}
 }
 
-func (m *Transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.VulnerabilityReport {
+func (m *Transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.ScanReport {
 	args := m.Called(req, source)
-	return args.Get(0).(harbor.VulnerabilityReport)
+	return args.Get(0).(harbor.ScanReport)
 }
