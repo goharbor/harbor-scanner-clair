@@ -12,4 +12,4 @@ test: $(SOURCES)
 	GO111MODULE=on go test -short -race -timeout 30s -coverprofile=coverage.txt -covermode=atomic ./...
 
 container: build
-	docker build -t $(IMAGE) .
+	docker build --no-cache -t $(IMAGE) .

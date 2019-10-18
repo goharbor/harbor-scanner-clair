@@ -6,15 +6,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type TransformerMock struct {
+type Transformer struct {
 	mock.Mock
 }
 
-func NewTransformer() *TransformerMock {
-	return &TransformerMock{}
+func NewTransformer() *Transformer {
+	return &Transformer{}
 }
 
-func (m *TransformerMock) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.VulnerabilityReport {
+func (m *Transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.VulnerabilityReport {
 	args := m.Called(req, source)
 	return args.Get(0).(harbor.VulnerabilityReport)
 }

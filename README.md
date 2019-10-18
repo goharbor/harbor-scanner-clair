@@ -67,8 +67,6 @@ Configuration of the adapter is done via environment variables at startup.
    curl -v https://localhost:8443/api/v1/metadata | jq
    ```
 
-If everything is fine the API will be mounted at [https://localhost:8443/api/v1](https://localhost:8443/api/v1).
-
 [release-img]: https://img.shields.io/github/release/danielpacak/harbor-scanner-clair.svg
 [release]: https://github.com/aquasecurity/harbor-scanner-clair/releases
 [ci-img]: https://travis-ci.org/danielpacak/harbor-scanner-clair.svg?branch=master

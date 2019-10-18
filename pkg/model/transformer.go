@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"strings"
@@ -32,13 +33,8 @@ func NewTransformer() *transformer {
 
 func (t *transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.VulnerabilityReport {
 	return harbor.VulnerabilityReport{
-		GeneratedAt: t.clock.Now(),
-		Scanner: harbor.Scanner{
-			Name:   "Clair",
-			Vendor: "CoreOS",
-			// TODO Get version from Clair API or env if the API does not provide it.
-			Version: "2.0.8",
-		},
+		GeneratedAt:     t.clock.Now(),
+		Scanner:         etc.GetScannerMetadata(),
 		Artifact:        req.Artifact,
 		Severity:        t.toComponentsOverview(source),
 		Vulnerabilities: t.toVulnerabilityItems(source),

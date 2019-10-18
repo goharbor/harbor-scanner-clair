@@ -3,6 +3,7 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
@@ -46,7 +47,6 @@ func (h *requestHandler) logRequest(next http.Handler) http.Handler {
 	})
 }
 
-// TODO Currently this method is blocking. In the final version it should just enqueue a scan job and return immediately.
 func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Request) {
 	scanRequest := harbor.ScanRequest{}
 	err := json.NewDecoder(req.Body).Decode(&scanRequest)
@@ -89,12 +89,7 @@ func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Reques
 
 func (h *requestHandler) GetMetadata(res http.ResponseWriter, req *http.Request) {
 	metadata := &harbor.ScannerMetadata{
-		Scanner: harbor.Scanner{
-			Name:   "Clair",
-			Vendor: "CoreOS",
-			// TODO Get version from Clair API or env if the API does not provide it.
-			Version: "2.0.8",
-		},
+		Scanner: etc.GetScannerMetadata(),
 		Capabilities: []harbor.Capability{
 			{
 				ConsumesMimeTypes: []string{

@@ -2,6 +2,7 @@ package etc
 
 import (
 	"github.com/caarlos0/env/v6"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/sirupsen/logrus"
 	"os"
 	"time"
@@ -42,4 +43,12 @@ func GetAPIConfig() (cfg APIConfig, err error) {
 func GetClairConfig() (cfg ClairConfig, err error) {
 	err = env.Parse(&cfg)
 	return
+}
+
+func GetScannerMetadata() harbor.Scanner {
+	return harbor.Scanner{
+		Name:    "Clair",
+		Vendor:  "CoreOS",
+		Version: "2.x",
+	}
 }

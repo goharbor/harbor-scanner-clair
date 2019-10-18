@@ -50,7 +50,7 @@ type Registry struct {
 type Artifact struct {
 	Repository string `json:"repository"`
 	Digest     string `json:"digest"`
-	MimeType   string `json:"mime_type"`
+	MimeType   string `json:"mime_type,omitempty"`
 }
 
 type ScanRequest struct {

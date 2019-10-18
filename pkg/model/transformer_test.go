@@ -75,7 +75,7 @@ func TestTransformer_Transform(t *testing.T) {
 		Scanner: harbor.Scanner{
 			Name:    "Clair",
 			Vendor:  "CoreOS",
-			Version: "2.0.8",
+			Version: "2.x",
 		},
 		Severity: harbor.SevHigh,
 		Vulnerabilities: []harbor.VulnerabilityItem{
