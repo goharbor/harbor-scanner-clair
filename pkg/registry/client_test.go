@@ -27,7 +27,7 @@ func TestClient_parseAuthenticateHeader(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			c := Client{}
+			c := client{}
 			tokenRequest, err := c.parseAuthenticateHeader(tc.authenticateHeader)
 			assert.Equal(t, tc.expectedError, err)
 			assert.Equal(t, tc.expectedTokenRequest, tokenRequest)

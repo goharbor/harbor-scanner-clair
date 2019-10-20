@@ -18,15 +18,17 @@ type Scanner interface {
 }
 
 type imageScanner struct {
-	client      *Client
-	transformer model.Transformer
+	registryClientFactory registry.ClientFactory
+	clairClient           Client
+	transformer           model.Transformer
 }
 
-func NewScanner(client *Client, transformer model.Transformer) (Scanner, error) {
+func NewScanner(registryClientFactory registry.ClientFactory, clairClient Client, transformer model.Transformer) Scanner {
 	return &imageScanner{
-		client:      client,
-		transformer: transformer,
-	}, nil
+		registryClientFactory: registryClientFactory,
+		clairClient:           clairClient,
+		transformer:           transformer,
+	}
 }
 
 func (s *imageScanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error) {
@@ -42,7 +44,7 @@ func (s *imageScanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error)
 		})
 
 		layerLog.Debug("Sending layer for scanning")
-		if err := s.client.ScanLayer(l); err != nil {
+		if err := s.clairClient.ScanLayer(l); err != nil {
 			layerLog.WithError(err).Error("Error while sending layer for scanning")
 			return harbor.ScanResponse{}, err
 		}
@@ -56,12 +58,12 @@ func (s *imageScanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error)
 func (s *imageScanner) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, error) {
 	layers := make([]clair.Layer, 0)
 
-	client, err := registry.NewClient(req.Registry.URL, req.Registry.Authorization)
+	registryClient, err := s.registryClientFactory.Get(req.Registry.URL, req.Registry.Authorization)
 	if err != nil {
 		return nil, fmt.Errorf("constructing registry client: %v", err)
 	}
 
-	manifest, bearerToken, err := client.Manifest(req.Artifact.Repository, req.Artifact.Digest)
+	manifest, bearerToken, err := registryClient.Manifest(req.Artifact.Repository, req.Artifact.Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +98,10 @@ func (s *imageScanner) buildBlobURL(endpoint, repository, digest string) string 
 }
 
 func (s *imageScanner) GetReport(layerName string) (harbor.ScanReport, error) {
-	res, err := s.client.GetLayer(layerName)
+	res, err := s.clairClient.GetLayer(layerName)
 	if err != nil {
 		return harbor.ScanReport{}, fmt.Errorf("getting layer %s: %v", layerName, err)
 	}
-
 	scanReport := s.transformer.Transform(harbor.ScanRequest{}, *res)
 	return scanReport, nil
 }

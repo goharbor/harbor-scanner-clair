@@ -12,15 +12,20 @@ import (
 )
 
 // Client communicates with clair endpoint to scan image and get detailed scan result
-type Client struct {
+type Client interface {
+	ScanLayer(layer clair.Layer) error
+	GetLayer(layerName string) (*clair.LayerEnvelope, error)
+}
+
+type client struct {
 	endpointURL string
 	// need to customize the logger to write output to job log.
 	client *http.Client
 }
 
 // NewClient constructs a new client for Clair REST API pointing to the specified endpoint URL.
-func NewClient(endpointURL string) *Client {
-	return &Client{
+func NewClient(endpointURL string) Client {
+	return &client{
 		endpointURL: strings.TrimSuffix(endpointURL, "/"),
 		client: &http.Client{Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -32,12 +37,11 @@ func NewClient(endpointURL string) *Client {
 }
 
 // ScanLayer calls Clair's API to scan a layer.
-func (c *Client) ScanLayer(l clair.Layer) error {
-	layer := clair.LayerEnvelope{
-		Layer: &l,
-		Error: nil,
+func (c *client) ScanLayer(layer clair.Layer) error {
+	envelope := clair.LayerEnvelope{
+		Layer: &layer,
 	}
-	data, err := json.Marshal(layer)
+	data, err := json.Marshal(envelope)
 	if err != nil {
 		return err
 	}
@@ -54,7 +58,7 @@ func (c *Client) ScanLayer(l clair.Layer) error {
 }
 
 // GetLayer calls Clair's API to get layers with detailed vulnerability list.
-func (c *Client) GetLayer(layerName string) (*clair.LayerEnvelope, error) {
+func (c *client) GetLayer(layerName string) (*clair.LayerEnvelope, error) {
 	url := c.endpointURL + "/v1/layers/" + layerName + "?features&vulnerabilities"
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -72,7 +76,7 @@ func (c *Client) GetLayer(layerName string) (*clair.LayerEnvelope, error) {
 	return &res, nil
 }
 
-func (c *Client) send(req *http.Request, expectedStatus int) ([]byte, error) {
+func (c *client) send(req *http.Request, expectedStatus int) ([]byte, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err

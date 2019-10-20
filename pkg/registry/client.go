@@ -26,14 +26,25 @@ type tokenResponse struct {
 	IssuedAt  time.Time `json:"issued_at"`
 }
 
-type Client struct {
+type ClientFactory interface {
+	Get(registryURL, authorization string) (Client, error)
+}
+
+type Client interface {
+	Manifest(repository, reference string) (distribution.Manifest, string, error)
+}
+
+type client struct {
 	registryURL   string
 	client        *http.Client
 	authorization string
 }
 
-func NewClient(registryURL string, authorization string) (*Client, error) {
-	return &Client{
+type clientFactory struct {
+}
+
+func (cf *clientFactory) Get(registryURL, authorization string) (Client, error) {
+	return &client{
 		registryURL: registryURL,
 		client: &http.Client{Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -45,7 +56,11 @@ func NewClient(registryURL string, authorization string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Manifest(repository, reference string) (distribution.Manifest, string, error) {
+func NewClientFactory() ClientFactory {
+	return &clientFactory{}
+}
+
+func (c *client) Manifest(repository, reference string) (distribution.Manifest, string, error) {
 	tokenRequest, err := c.getTokenRequest(repository, reference)
 	if err != nil {
 		return nil, "", err
@@ -87,7 +102,7 @@ func (c *Client) Manifest(repository, reference string) (distribution.Manifest, 
 	return manifest, tokenResponse.Token, nil
 }
 
-func (c *Client) getTokenRequest(repository, reference string) (tokenRequest, error) {
+func (c *client) getTokenRequest(repository, reference string) (tokenRequest, error) {
 	requestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", c.registryURL, repository, reference)
 	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
@@ -113,7 +128,7 @@ func (c *Client) getTokenRequest(repository, reference string) (tokenRequest, er
 	return c.parseAuthenticateHeader(resp.Header.Get("Www-Authenticate"))
 }
 
-func (c *Client) parseAuthenticateHeader(value string) (tokenRequest, error) {
+func (c *client) parseAuthenticateHeader(value string) (tokenRequest, error) {
 	log.Debugf("Parsing authenticate header %s", value)
 	realmString := strings.TrimSpace(strings.TrimPrefix(value, "Bearer"))
 
@@ -146,7 +161,7 @@ func (c *Client) parseAuthenticateHeader(value string) (tokenRequest, error) {
 	}, nil
 }
 
-func (c *Client) getAccessToken(tokenRequest tokenRequest) (tokenResponse, error) {
+func (c *client) getAccessToken(tokenRequest tokenRequest) (tokenResponse, error) {
 	var tokenResponse tokenResponse
 	requestURL := tokenRequest.Realm
 

@@ -6,6 +6,7 @@ import (
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model"
+	"github.com/goharbor/harbor-scanner-clair/pkg/registry"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -37,11 +38,9 @@ func main() {
 		log.Fatalf("Error: %v", err)
 	}
 
-	client := clair.NewClient(clairConfig.URL)
-	scanner, err := clair.NewScanner(client, model.NewTransformer())
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	registryClientFactory := registry.NewClientFactory()
+	clairClient := clair.NewClient(clairConfig.URL)
+	scanner := clair.NewScanner(registryClientFactory, clairClient, model.NewTransformer())
 
 	apiConfig, err := etc.GetAPIConfig()
 	if err != nil {
