@@ -1,11 +1,12 @@
 package clair
 
 const (
-	SeverityNone     = "negligible"
-	SeverityLow      = "low"
-	SeverityMedium   = "medium"
-	SeverityHigh     = "high"
-	SeverityCritical = "critical"
+	SeverityUnknown    = "unknown"
+	SeverityNegligible = "negligible"
+	SeverityLow        = "low"
+	SeverityMedium     = "medium"
+	SeverityHigh       = "high"
+	SeverityCritical   = "critical"
 )
 
 // Layer is one of the tarballs used in the composition of an image, often expressed as a filesystem delta from

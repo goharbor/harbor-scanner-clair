@@ -102,6 +102,6 @@ func (s *imageScanner) GetReport(layerName string) (harbor.ScanReport, error) {
 	if err != nil {
 		return harbor.ScanReport{}, fmt.Errorf("getting layer %s: %v", layerName, err)
 	}
-	scanReport := s.transformer.Transform(harbor.ScanRequest{}, *res)
+	scanReport := s.transformer.Transform(harbor.Artifact{}, *res)
 	return scanReport, nil
 }

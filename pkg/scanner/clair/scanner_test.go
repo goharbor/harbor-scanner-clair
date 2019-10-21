@@ -42,7 +42,7 @@ func TestImageScanner_GetReport(t *testing.T) {
 			},
 			transformerExpectation: &mock.Expectation{
 				Method:     "Transform",
-				Args:       []interface{}{harbor.ScanRequest{}, layerEnvelope},
+				Args:       []interface{}{harbor.Artifact{}, layerEnvelope},
 				ReturnArgs: []interface{}{scanReport},
 			},
 			expectedReport: scanReport,

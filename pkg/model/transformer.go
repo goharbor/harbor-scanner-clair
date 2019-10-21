@@ -4,6 +4,7 @@ import (
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -16,7 +17,7 @@ func (c *systemClock) Now() time.Time {
 }
 
 type Transformer interface {
-	Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.ScanReport
+	Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport
 }
 
 type transformer struct {
@@ -31,11 +32,11 @@ func NewTransformer() *transformer {
 	}
 }
 
-func (t *transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.ScanReport {
+func (t *transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {
 	return harbor.ScanReport{
 		GeneratedAt:     t.clock.Now(),
 		Scanner:         etc.GetScannerMetadata(),
-		Artifact:        req.Artifact,
+		Artifact:        artifact,
 		Severity:        t.toComponentsOverview(source),
 		Vulnerabilities: t.toVulnerabilityItems(source),
 	}
@@ -89,7 +90,7 @@ func (t *transformer) toVulnerabilityItems(envelope clair.LayerEnvelope) []harbo
 				Version:     f.Version,
 				Severity:    t.toHarborSeverity(v.Severity),
 				FixVersion:  v.FixedBy,
-				Links:       []string{v.Link},
+				Links:       t.toLinks(v.Link),
 				Description: v.Description,
 			}
 			res = append(res, vItem)
@@ -98,12 +99,19 @@ func (t *transformer) toVulnerabilityItems(envelope clair.LayerEnvelope) []harbo
 	return res
 }
 
+func (t *transformer) toLinks(link string) []string {
+	if link == "" {
+		return []string{}
+	}
+	return []string{link}
+}
+
 // toHarborSeverity parses the severity of clair to Harbor's Severity type.
 // If the string is not recognized the value will be set to unknown.
 func (t *transformer) toHarborSeverity(clairSev string) harbor.Severity {
 	switch sev := strings.ToLower(clairSev); sev {
-	case clair.SeverityNone:
-		return harbor.SevNone
+	case clair.SeverityNegligible:
+		return harbor.SevNegligible
 	case clair.SeverityLow:
 		return harbor.SevLow
 	case clair.SeverityMedium:
@@ -112,7 +120,10 @@ func (t *transformer) toHarborSeverity(clairSev string) harbor.Severity {
 		return harbor.SevHigh
 	case clair.SeverityCritical:
 		return harbor.SevCritical
+	case clair.SeverityUnknown:
+		return harbor.SevUnknown
 	default:
+		log.WithField("severity", sev).Warn("Unknown Clair severity")
 		return harbor.SevUnknown
 	}
 }

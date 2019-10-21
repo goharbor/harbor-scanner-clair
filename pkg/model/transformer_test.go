@@ -21,12 +21,10 @@ func TestTransformer_Transform(t *testing.T) {
 	fixedTime := time.Now()
 	transformer.clock = &fixedClock{fixedTime: fixedTime}
 
-	scanRequest := harbor.ScanRequest{
-		Artifact: harbor.Artifact{
-			Repository: "library/cassandra",
-			Digest:     "sha256:70acd789bbbe58a2bbad70880e0ee1dc131846bd2f6c5f5ba459bad8a5b94815",
-			MimeType:   "application/vnd.docker.distribution.manifest.v2+json",
-		},
+	artifact := harbor.Artifact{
+		Repository: "library/cassandra",
+		Digest:     "sha256:70acd789bbbe58a2bbad70880e0ee1dc131846bd2f6c5f5ba459bad8a5b94815",
+		MimeType:   "application/vnd.docker.distribution.manifest.v2+json",
 	}
 	source := clair.LayerEnvelope{
 		Layer: &clair.Layer{
@@ -61,10 +59,41 @@ func TestTransformer_Transform(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name:            "package1",
+					Version:         "package1.version",
+					Vulnerabilities: nil,
+				},
+				{
+					Name:    "package2",
+					Version: "package2.version",
+					Vulnerabilities: []clair.Vulnerability{
+						{
+							Name:        "CVE-2019-0005",
+							Description: "CVE-2019-0005.desc",
+							Severity:    "Low",
+						},
+						{
+							Name:        "CVE-2019-0030",
+							Description: "CVE-2019-0030.desc",
+							Severity:    "Unknown",
+						},
+						{
+							Name:        "CVE-2019-8877",
+							Description: "CVE-2019-8877.desc",
+							Severity:    "Critical",
+						},
+						{
+							Name:        "CVE-2019-6666",
+							Description: "CVE-2019-6666.desc",
+							Severity:    "~~UNRECOGNIZED~~",
+						},
+					},
+				},
 			},
 		},
 	}
-	scanReport := transformer.Transform(scanRequest, source)
+	scanReport := transformer.Transform(artifact, source)
 	assert.Equal(t, harbor.ScanReport{
 		GeneratedAt: fixedTime,
 		Artifact: harbor.Artifact{
@@ -77,7 +106,7 @@ func TestTransformer_Transform(t *testing.T) {
 			Vendor:  "CoreOS",
 			Version: "2.x",
 		},
-		Severity: harbor.SevHigh,
+		Severity: harbor.SevCritical,
 		Vulnerabilities: []harbor.VulnerabilityItem{
 			{
 				ID:          "CVE-2019-5094",
@@ -92,7 +121,7 @@ func TestTransformer_Transform(t *testing.T) {
 				ID:          "CVE-2019-1010023",
 				Pkg:         "glibc",
 				Version:     "2.24-11+deb9u4",
-				Severity:    harbor.SevNone,
+				Severity:    harbor.SevNegligible,
 				Description: "CVE-2019-1010023 desc",
 				Links:       []string{"https://security-tracker.debian.org/tracker/CVE-2019-1010023"},
 			},
@@ -103,6 +132,38 @@ func TestTransformer_Transform(t *testing.T) {
 				Severity:    harbor.SevHigh,
 				Description: "CVE-2018-6485 desc",
 				Links:       []string{"https://security-tracker.debian.org/tracker/CVE-2018-6485"},
+			},
+			{
+				ID:          "CVE-2019-0005",
+				Pkg:         "package2",
+				Version:     "package2.version",
+				Severity:    harbor.SevLow,
+				Description: "CVE-2019-0005.desc",
+				Links:       []string{},
+			},
+			{
+				ID:          "CVE-2019-0030",
+				Pkg:         "package2",
+				Version:     "package2.version",
+				Severity:    harbor.SevUnknown,
+				Description: "CVE-2019-0030.desc",
+				Links:       []string{},
+			},
+			{
+				ID:          "CVE-2019-8877",
+				Pkg:         "package2",
+				Version:     "package2.version",
+				Severity:    harbor.SevCritical,
+				Description: "CVE-2019-8877.desc",
+				Links:       []string{},
+			},
+			{
+				ID:          "CVE-2019-6666",
+				Pkg:         "package2",
+				Version:     "package2.version",
+				Severity:    harbor.SevUnknown,
+				Description: "CVE-2019-6666.desc",
+				Links:       []string{},
 			},
 		},
 	}, scanReport)

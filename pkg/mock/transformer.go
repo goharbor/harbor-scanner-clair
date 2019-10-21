@@ -14,7 +14,7 @@ func NewTransformer() *Transformer {
 	return &Transformer{}
 }
 
-func (m *Transformer) Transform(req harbor.ScanRequest, source clair.LayerEnvelope) harbor.ScanReport {
-	args := m.Called(req, source)
+func (m *Transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {
+	args := m.Called(artifact, source)
 	return args.Get(0).(harbor.ScanReport)
 }
