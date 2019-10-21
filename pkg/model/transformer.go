@@ -58,7 +58,7 @@ func (t *transformer) toComponentsOverview(envelope clair.LayerEnvelope) harbor.
 		vulnMap[sev]++
 	}
 	overallSev := harbor.SevNone
-	for k, _ := range vulnMap {
+	for k := range vulnMap {
 		if k > overallSev {
 			overallSev = k
 		}

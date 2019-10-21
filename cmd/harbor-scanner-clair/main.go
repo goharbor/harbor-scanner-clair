@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 var (
@@ -54,7 +55,7 @@ func main() {
 	shutdownComplete := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt, os.Kill)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 		captured := <-sigint
 		log.WithField("signal", captured.String()).Debug("Trapped os signal")
 

@@ -12,7 +12,11 @@ env:
   matrix:
     - GO111MODULE=on
 
+install:
+  - make setup
+
 script:
+  - make lint
   - make test
   - curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish --rm-dist
 

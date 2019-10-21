@@ -114,7 +114,15 @@ func (h *requestHandler) validate(req harbor.ScanRequest) *harbor.Error {
 
 func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	scanRequestID, _ := vars[pathVarScanRequestID]
+	scanRequestID, ok := vars[pathVarScanRequestID]
+	if !ok {
+		log.Error("Error while parsing `scan_request_id` path variable")
+		h.WriteJSONError(res, harbor.Error{
+			HTTPCode: http.StatusBadRequest,
+			Message:  "missing scan_request_id",
+		})
+		return
+	}
 
 	scanReport, err := h.scanner.GetReport(scanRequestID)
 	if err != nil {

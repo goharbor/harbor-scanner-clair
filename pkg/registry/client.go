@@ -67,6 +67,9 @@ func (c *client) Manifest(repository, reference string) (distribution.Manifest, 
 	}
 	log.Debugf("Token request: %v", tokenRequest)
 	tokenResponse, err := c.getAccessToken(tokenRequest)
+	if err != nil {
+		return nil, "", err
+	}
 
 	requestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", c.registryURL, repository, reference)
 	log.Debugf("Fetch manifest URL: %s", requestURL)
