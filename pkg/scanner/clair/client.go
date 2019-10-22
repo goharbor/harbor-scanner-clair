@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
 	"io/ioutil"
 	"net/http"
@@ -24,13 +25,13 @@ type client struct {
 }
 
 // NewClient constructs a new client for Clair REST API pointing to the specified endpoint URL.
-func NewClient(endpointURL string) Client {
+func NewClient(tlsConfig etc.TLSConfig, cfg etc.ClairConfig) Client {
 	return &client{
-		endpointURL: strings.TrimSuffix(endpointURL, "/"),
+		endpointURL: strings.TrimSuffix(cfg.URL, "/"),
 		client: &http.Client{Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				// FIXME Allow configuring custom or self-signed certs rather that skipping verification.
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: tlsConfig.InsecureSkipVerify,
+				RootCAs:            tlsConfig.RootCAs,
 			},
 		}},
 	}

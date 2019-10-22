@@ -3,81 +3,82 @@ package registry
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema2"
-	log "github.com/sirupsen/logrus"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"io/ioutil"
+	"net/http"
 )
 
 type ClientFactory interface {
-	Get(registryURL, authorization string) (Client, error)
+	Get(req harbor.ScanRequest) (Client, error)
 }
 
 type Client interface {
-	Manifest(repository, reference string) (distribution.Manifest, string, error)
+	GetManifest() (distribution.Manifest, error)
 }
 
 type client struct {
-	registryURL   string
-	client        *http.Client
-	authorization string
+	scanRequest harbor.ScanRequest
+	client      *http.Client
 }
 
 type clientFactory struct {
+	tlsConfig etc.TLSConfig
 }
 
-func (cf *clientFactory) Get(registryURL, authorization string) (Client, error) {
+func NewClientFactory(TLSConfig etc.TLSConfig) ClientFactory {
+	return &clientFactory{
+		tlsConfig: TLSConfig,
+	}
+}
+
+func (cf *clientFactory) Get(scanRequest harbor.ScanRequest) (Client, error) {
 	return &client{
-		registryURL: registryURL,
+		scanRequest: scanRequest,
 		client: &http.Client{Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				// FIXME Allow configuring custom or self-signed certs rather than skipping verification.
-				InsecureSkipVerify: true,
+				RootCAs:            cf.tlsConfig.RootCAs,
+				InsecureSkipVerify: cf.tlsConfig.InsecureSkipVerify,
 			},
 		}},
-		authorization: authorization,
 	}, nil
 }
 
-func NewClientFactory() ClientFactory {
-	return &clientFactory{}
-}
-
-func (c *client) Manifest(repository, reference string) (distribution.Manifest, string, error) {
-	requestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", c.registryURL, repository, reference)
-	log.Debugf("Fetch manifest URL: %s", requestURL)
-	req, err := http.NewRequest("GET", requestURL, nil)
+func (c *client) GetManifest() (distribution.Manifest, error) {
+	req, err := http.NewRequest(http.MethodGet, c.manifestURL(), nil)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	req.Header.Add("Accept", schema2.MediaTypeManifest)
-	req.Header.Add("Authorization", c.authorization)
+	req.Header.Add("Authorization", c.scanRequest.Registry.Authorization)
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	log.Debugf("Response status: %s", resp.Status)
-	log.Debugf("Response headers: %v", resp.Header)
 
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", fmt.Errorf("HTTP not ok: %v", resp.Status)
+		return nil, fmt.Errorf("fetching manifest with status %q: %s", resp.Status, string(b))
 	}
 
 	manifest, _, err := distribution.UnmarshalManifest(schema2.MediaTypeManifest, b)
 	if err != nil {
-		return nil, "", fmt.Errorf("unmarshaling manifest: %v", err)
+		return nil, fmt.Errorf("unmarshaling manifest: %v", err)
 	}
+	return manifest, nil
+}
 
-	return manifest, strings.TrimPrefix(c.authorization, "Bearer "), nil
+func (c *client) manifestURL() string {
+	return fmt.Sprintf("%s/v2/%s/manifests/%s", c.scanRequest.Registry.URL,
+		c.scanRequest.Artifact.Repository,
+		c.scanRequest.Artifact.Digest)
 }

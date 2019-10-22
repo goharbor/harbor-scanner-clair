@@ -2,6 +2,7 @@ package mock
 
 import (
 	"github.com/docker/distribution"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/registry"
 	"github.com/stretchr/testify/mock"
 )
@@ -22,12 +23,12 @@ func NewRegistryClient() *RegistryClient {
 	return &RegistryClient{}
 }
 
-func (f *RegistryClientFactory) Get(registryURL, authorization string) (registry.Client, error) {
-	args := f.Called(registryURL, authorization)
+func (f *RegistryClientFactory) Get(req harbor.ScanRequest) (registry.Client, error) {
+	args := f.Called(req)
 	return args.Get(0).(registry.Client), args.Error(1)
 }
 
-func (c *RegistryClient) Manifest(repository, reference string) (distribution.Manifest, string, error) {
-	args := c.Called(repository, reference)
-	return args.Get(0).(distribution.Manifest), args.String(1), args.Error(2)
+func (c *RegistryClient) GetManifest() (distribution.Manifest, error) {
+	args := c.Called()
+	return args.Get(0).(distribution.Manifest), args.Error(1)
 }

@@ -39,8 +39,13 @@ func main() {
 		log.Fatalf("Error: %v", err)
 	}
 
-	registryClientFactory := registry.NewClientFactory()
-	clairClient := clair.NewClient(clairConfig.URL)
+	tlsConfig, err := etc.GetTLSConfig()
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	registryClientFactory := registry.NewClientFactory(tlsConfig)
+	clairClient := clair.NewClient(tlsConfig, clairConfig)
 	scanner := clair.NewScanner(registryClientFactory, clairClient, model.NewTransformer())
 
 	apiConfig, err := etc.GetAPIConfig()

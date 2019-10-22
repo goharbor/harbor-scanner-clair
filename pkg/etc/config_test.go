@@ -133,6 +133,39 @@ func TestAPIConfig_IsTLSEnabled(t *testing.T) {
 	}
 }
 
+func TestGetTLSConfig(t *testing.T) {
+	testCases := []struct {
+		name           string
+		envs           Envs
+		expectedConfig TLSConfig
+	}{
+		{
+			name: "Should return default config",
+			expectedConfig: TLSConfig{
+				InsecureSkipVerify: false,
+			},
+		},
+		{
+			name: "Should overwrite default config with envs",
+			envs: Envs{
+				"SCANNER_TLS_INSECURE_SKIP_VERIFY": "true",
+				"SCANNER_TLS_CLIENTCAS":            "test/data/ca.crt",
+			},
+			expectedConfig: TLSConfig{
+				InsecureSkipVerify: true},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			setenvs(t, tc.envs)
+			// TODO Assert on the actual cfg and RootCAs
+			_, err := GetTLSConfig()
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestGetClairConfig(t *testing.T) {
 	testCases := []struct {
 		name           string

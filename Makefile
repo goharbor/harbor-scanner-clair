@@ -10,6 +10,7 @@ $(BINARY): $(SOURCES)
 
 setup:
 	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.21.0
+
 .PHONY: setup
 
 lint:
