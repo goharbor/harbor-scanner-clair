@@ -64,19 +64,19 @@ Configuration of the adapter is done via environment variables at startup.
 5. If everything is fine you should be able to get scanner's metadata:
    ```
    kubectl port-forward service/harbor-scanner-clair 8443:8443 &> /dev/null &
-   curl -v https://localhost:8443/api/v1/metadata | jq
+   curl -vk https://localhost:8443/api/v1/metadata | jq
    ```
 
-[release-img]: https://img.shields.io/github/release/danielpacak/harbor-scanner-clair.svg
-[release]: https://github.com/aquasecurity/harbor-scanner-clair/releases
-[ci-img]: https://travis-ci.org/danielpacak/harbor-scanner-clair.svg?branch=master
-[ci]: https://travis-ci.org/danielpacak/harbor-scanner-clair
-[cov-img]: https://codecov.io/github/danielpacak/harbor-scanner-clair/branch/master/graph/badge.svg
-[cov]: https://codecov.io/github/danielpacak/harbor-scanner-clair
-[report-card-img]: https://goreportcard.com/badge/github.com/danielpacak/harbor-scanner-clair
-[report-card]: https://goreportcard.com/report/github.com/danielpacak/harbor-scanner-clair
-[license-img]: https://img.shields.io/github/license/danielpacak/harbor-scanner-clair.svg
-[license]: https://github.com/aquasecurity/harbor-scanner-clair/blob/master/LICENSE
+[release-img]: https://img.shields.io/github/release/goharbor/harbor-scanner-clair.svg
+[release]: https://github.com/goharbor/harbor-scanner-clair/releases
+[ci-img]: https://travis-ci.org/goharbor/harbor-scanner-clair.svg?branch=master
+[ci]: https://travis-ci.org/goharbor/harbor-scanner-clair
+[cov-img]: https://codecov.io/github/goharbor/harbor-scanner-clair/branch/master/graph/badge.svg
+[cov]: https://codecov.io/github/goharbor/harbor-scanner-clair
+[report-card-img]: https://goreportcard.com/badge/github.com/goharbor/harbor-scanner-clair
+[report-card]: https://goreportcard.com/report/github.com/goharbor/harbor-scanner-clair
+[license-img]: https://img.shields.io/github/license/goharbor/harbor-scanner-clair.svg
+[license]: https://github.com/goharbor/harbor-scanner-clair/blob/master/LICENSE
 
 [clair-url]: https://github.com/coreos/clair
 [image-vulnerability-scanning-proposal]: https://github.com/goharbor/community/blob/master/proposals/pluggable-image-vulnerability-scanning_proposal.md

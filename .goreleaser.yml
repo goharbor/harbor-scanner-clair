@@ -28,7 +28,7 @@ changelog:
       - '^chore:'
 dockers:
   - image_templates:
-      - "docker.io/danielpacak/harbor-scanner-clair:{{ .Version }}"
+      - "docker.io/goharbor/harbor-scanner-clair:{{ .Version }}"
     binaries:
       - scanner-clair
     build_flag_templates:
@@ -37,5 +37,5 @@ dockers:
       - "--label=org.label-schema.description=Harbor scanner adapter for Clair"
       - "--label=org.label-schema.version={{ .Version }}"
       - "--label=org.label-schema.build-date={{ .Date }}"
-      - "--label=org.label-schema.vcs=https://github.com/danielpacak/harbor-scanner-clair"
+      - "--label=org.label-schema.vcs=https://github.com/goharbor/harbor-scanner-clair"
       - "--label=org.label-schema.vcs-ref={{ .FullCommit }}"
