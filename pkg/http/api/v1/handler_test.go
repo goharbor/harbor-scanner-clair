@@ -3,16 +3,17 @@ package v1
 import (
 	"errors"
 	"fmt"
-	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
-	"github.com/goharbor/harbor-scanner-clair/pkg/mock"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
+	"github.com/goharbor/harbor-scanner-clair/pkg/mock"
+	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRequestHandler_GetHealthy(t *testing.T) {
@@ -302,7 +303,8 @@ func TestRequestHandler_GetMetadata(t *testing.T) {
     }
   ],
   "properties": {
-    "harbor.scanner-adapter/scanner-type": "os-package-vulnerability"
+    "harbor.scanner-adapter/scanner-type": "os-package-vulnerability",
+    "harbor.scanner-adapter/registry-authorization-type": "Bearer"
   }
 }`, rr.Body.String())
 	scanner.AssertExpectations(t)
