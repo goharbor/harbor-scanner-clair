@@ -3,14 +3,15 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 )
 
 const (
@@ -150,7 +151,8 @@ func (h *requestHandler) GetMetadata(res http.ResponseWriter, req *http.Request)
 			},
 		},
 		Properties: map[string]string{
-			"harbor.scanner-adapter/scanner-type": "os-package-vulnerability",
+			"harbor.scanner-adapter/scanner-type":                "os-package-vulnerability",
+			"harbor.scanner-adapter/registry-authorization-type": "Bearer",
 		},
 	}
 
