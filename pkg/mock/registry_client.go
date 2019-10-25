@@ -23,12 +23,12 @@ func NewRegistryClient() *RegistryClient {
 	return &RegistryClient{}
 }
 
-func (f *RegistryClientFactory) Get(req harbor.ScanRequest) (registry.Client, error) {
-	args := f.Called(req)
-	return args.Get(0).(registry.Client), args.Error(1)
+func (f *RegistryClientFactory) Get() registry.Client {
+	args := f.Called()
+	return args.Get(0).(registry.Client)
 }
 
-func (c *RegistryClient) GetManifest() (distribution.Manifest, error) {
-	args := c.Called()
+func (c *RegistryClient) GetManifest(req harbor.ScanRequest) (distribution.Manifest, error) {
+	args := c.Called(req)
 	return args.Get(0).(distribution.Manifest), args.Error(1)
 }

@@ -9,19 +9,24 @@ import (
 	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"io/ioutil"
 	"net/http"
+	"sync"
+)
+
+var (
+	once      sync.Once
+	singleton *client
 )
 
 type ClientFactory interface {
-	Get(req harbor.ScanRequest) (Client, error)
+	Get() Client
 }
 
 type Client interface {
-	GetManifest() (distribution.Manifest, error)
+	GetManifest(req harbor.ScanRequest) (distribution.Manifest, error)
 }
 
 type client struct {
-	scanRequest harbor.ScanRequest
-	client      *http.Client
+	client *http.Client
 }
 
 type clientFactory struct {
@@ -34,26 +39,29 @@ func NewClientFactory(TLSConfig etc.TLSConfig) ClientFactory {
 	}
 }
 
-func (cf *clientFactory) Get(scanRequest harbor.ScanRequest) (Client, error) {
-	return &client{
-		scanRequest: scanRequest,
-		client: &http.Client{Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:            cf.tlsConfig.RootCAs,
-				InsecureSkipVerify: cf.tlsConfig.InsecureSkipVerify,
-			},
-		}},
-	}, nil
+func (cf *clientFactory) Get() Client {
+	once.Do(func() {
+		singleton = &client{
+			client: &http.Client{Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:            cf.tlsConfig.RootCAs,
+					InsecureSkipVerify: cf.tlsConfig.InsecureSkipVerify,
+				},
+			}},
+		}
+	})
+
+	return singleton
 }
 
-func (c *client) GetManifest() (distribution.Manifest, error) {
-	req, err := http.NewRequest(http.MethodGet, c.manifestURL(), nil)
+func (c *client) GetManifest(sr harbor.ScanRequest) (distribution.Manifest, error) {
+	req, err := http.NewRequest(http.MethodGet, c.manifestURL(sr), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Accept", schema2.MediaTypeManifest)
-	req.Header.Add("Authorization", c.scanRequest.Registry.Authorization)
+	req.Header.Add("Authorization", sr.Registry.Authorization)
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -77,8 +85,8 @@ func (c *client) GetManifest() (distribution.Manifest, error) {
 	return manifest, nil
 }
 
-func (c *client) manifestURL() string {
-	return fmt.Sprintf("%s/v2/%s/manifests/%s", c.scanRequest.Registry.URL,
-		c.scanRequest.Artifact.Repository,
-		c.scanRequest.Artifact.Digest)
+func (c *client) manifestURL(sr harbor.ScanRequest) string {
+	return fmt.Sprintf("%s/v2/%s/manifests/%s", sr.Registry.URL,
+		sr.Artifact.Repository,
+		sr.Artifact.Digest)
 }

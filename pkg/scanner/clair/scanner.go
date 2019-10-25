@@ -56,12 +56,7 @@ func (s *scanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error) {
 }
 
 func (s *scanner) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, error) {
-	registryClient, err := s.registryClientFactory.Get(req)
-	if err != nil {
-		return nil, fmt.Errorf("constructing registry client: %v", err)
-	}
-
-	manifest, err := registryClient.GetManifest()
+	manifest, err := s.registryClientFactory.Get().GetManifest(req)
 	if err != nil {
 		return nil, err
 	}

@@ -31,8 +31,8 @@ func TestImageScanner_Scan(t *testing.T) {
 	clairClient := mock.NewClairClient()
 	transformer := mock.NewTransformer()
 
-	registryClientFactory.On("Get", req).Return(registryClient, nil)
-	registryClient.On("GetManifest").Return(schema2.DeserializedManifest{
+	registryClientFactory.On("Get").Return(registryClient)
+	registryClient.On("GetManifest", req).Return(schema2.DeserializedManifest{
 		Manifest: schema2.Manifest{
 			Versioned: manifest.Versioned{
 				SchemaVersion: 2,
