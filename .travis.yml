@@ -1,36 +1,32 @@
 language: go
 go:
-  - "1.13"
-
+- '1.13'
 git:
   depth: 1
-
 services:
-  - docker
-
+- docker
 env:
   matrix:
-    - GO111MODULE=on
-
+  - GO111MODULE=on
+  global:
+  - secure: iFaSkw/4Hgi1Me9CSpxKegYMFy/8pUQHE/Fv3QqEt+avbxDjT78N1I+p0eWw9HEmqrehHvqgdGY6GRVa6QSabitqp29qqGVdO3zefUD0OiZKnpQLwFeQRlO+7NALBaUmTr7ntiY/Lv9stBXTncBpx6by7ON3JpI7eEii36l5Y4+SWzP9bAki9vWFmcfiWqRAJ1ORQIzQWydeeaBmf06iVEPgRIVcbqSzHq0DNT4a8gDgx1wf+HUPQA1Ot1k9+ARNXw1H+hK9eoJp4ljzazaPh5STt+GCH9Kj2ALoQLz04t4tv69ioYME1yLYPLsddRYpATVCdDono8Vs8+2AMXyAjvhteHT280khZHEVdCjXrh/kcy25gNGRcEWtxn63FVxUjorYlCSlzDrKza5WdBPBBObbybQzr76nLM14D65eRdEGItWE6pVQS6D/Btjf0tVWIIkeXY4Q69cpMn5wONe8mQXZS5SnounI3wRUbLgCgJdIEHbpDU46LNgnWQBliLpouhmv+Y86UevH3Qj3Zcckegq4B8K5RaIApI2IsYA1cfTbTWEmOV2mclf4f0VUO4Y4Vd/l+jbcZKrU1N4cL1WjnszKS/i9ejUkJYaPRgn4u+h/MHk6ZFvonRSxtXOVIroHxRLR7/nw6ctARNEDGNHOPmNoZhat+bOoSVVmVPDzpb0=
+  - secure: D0ZbcTkHYy/mPwZIpDSi36WqGkzwrEqdD/sKl/C3F0c1rzsdZYjgs5i6bAVxPNQvpv/ClMLchImw3rZVkjrT0ZdVzwgWTPReudvTHpwm0gijwEgVb2BHtLkcYFJvEIhvrPHsPyb6J+H4Lq1Uo5OIUbXfjgQ0sORuczfqkdRWMbzcwkpacL0scspdLnlEoV/0YklziOZcmyFMsskH6n9LY0wf4QQ/x8ZXP/RCU9wcjkD7Aop1uJ6DAHTGVp839U1fUanrD6iD/2kMWuXgvNaCKeKy4Z+f9ANIah+GcTHCCROTDErHJB8DhFxvavvAaEgKXV37NqqXS48Zz0vSMhu2zOFhx14KhRH9ykyHkRAArtHrrZ3QdoGU44+BItCFdLSE/5Evpz7g+szfs7yK0gn0QZhUgEWPLWMlQRFeZzIsKFO/a03LNNuC4tYp4I6CeHv5jZgcmhXQ4GT7eeYNjqzcDiIdt339GNfr3A0JgXo08bs7IjwV98/u0fAuPdC9T4oI+B5P6fctOo2mLsWDT+7xBmwl+Xk4um4qy2nvbppPkCXoHPgTkQazVKGkhsL+xPSOZ7WJjtOHnfYrdKkFQuY6bIU7IBINifEP4lk4OpbnG/Kli7tIKQrxA1ynnvQKOUZrBIpjFUfdfykUOiNGGejJQzjPSfyMr8Dp1jAewJH68cs=
+  - secure: V82/AQ0RtO8Op03pyfWb4wUnhjptE0AGPBTZtni2bpGhpz1UV14eLVvb95+d4cfWOLsl+KHw38xff2VY6IBkI6rkANy+Wg5+du881HpU71IJRYG49fv2hp71HZqsT/QlOKnStJWxybhG2wSc0Y2pFHvIz7ZArdrIkVzsD4tPPmW15v24GEdYoeDUWrL56mFepy0Yd0I3uyOpcqYWlJLW7f8h5r+Mnh00Ocgv0lUg16UXPBieuAsKFLdy56+SFI/2yF1FQk4Sc6jiefblrLMEcX6OF4Kc0zZPqrJqu8ZI/v7EvvMoehQ+7M7NL/B8J9C+sWqMLQmO47I76aBId6XlHv6O9F5c+4QMzBuPARNuoKhXXbDCUKTNY96cCXqRNFZA1YxBjy+hBVzXDH9hHzI1D5QYHPAM0pINhfOV4Bc/BwK3zq2Hclp8nNFUdV6aui1lTMUcPl7mcGdZ3lFzT9HZAazKB6F3dILpqjiYqMNQRUWcdV58eIBErJ/q6Vfsjn23l4QbYsOG8MUMgx0QYYTPDn6pXO1AQ+6fxjdqJyhK1ukvDuWF24x6FWOov+jagzmH9R3zCg6K4nTincbaHDjDsY69WqRREntRyemkucYOnOItKclaNTtx1KTZW9U/0+c6yhih9AIGvxODq6L3Crgd9GKf7F/z2/UzZuFvV5z4HLY=
 install:
-  - make setup
-
+- make setup
 script:
-  - make lint
-  - make test
-  - curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish --rm-dist
-
+- make lint
+- make test
+- curl -sL https://git.io/goreleaser | bash -s -- --snapshot --skip-publish --rm-dist
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
-  - test -n "$TRAVIS_TAG" && docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_TOKEN"
-
+- bash <(curl -s https://codecov.io/bash)
+- test -n "$TRAVIS_TAG" && docker login -u="$DOCKERHUB_USER" -p="$DOCKERHUB_TOKEN"
 deploy:
-  - provider: script
-    skip_cleanup: true
-    script: curl -sL https://git.io/goreleaser | bash -s -- --rm-dist
-    on:
-      tags: true
-      condition: $TRAVIS_OS_NAME = linux
-
+- provider: script
+  skip_cleanup: true
+  script: curl -sL https://git.io/goreleaser | bash -s -- --rm-dist
+  on:
+    tags: true
+    condition: "$TRAVIS_OS_NAME = linux"
 notifications:
   email: false
