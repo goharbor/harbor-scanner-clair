@@ -17,21 +17,21 @@ type Scanner interface {
 	GetReport(scanRequestID string) (harbor.ScanReport, error)
 }
 
-type imageScanner struct {
+type scanner struct {
 	registryClientFactory registry.ClientFactory
 	clairClient           Client
 	transformer           model.Transformer
 }
 
 func NewScanner(registryClientFactory registry.ClientFactory, clairClient Client, transformer model.Transformer) Scanner {
-	return &imageScanner{
+	return &scanner{
 		registryClientFactory: registryClientFactory,
 		clairClient:           clairClient,
 		transformer:           transformer,
 	}
 }
 
-func (s *imageScanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error) {
+func (s *scanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error) {
 	layers, err := s.prepareLayers(req)
 	if err != nil {
 		return harbor.ScanResponse{}, fmt.Errorf("preparing layers: %v", err)
@@ -55,23 +55,14 @@ func (s *imageScanner) Scan(req harbor.ScanRequest) (harbor.ScanResponse, error)
 	return harbor.ScanResponse{ID: layerName}, nil
 }
 
-func (s *imageScanner) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, error) {
-	layers := make([]clair.Layer, 0)
-
-	registryClient, err := s.registryClientFactory.Get(req.Registry.URL, req.Registry.Authorization)
-	if err != nil {
-		return nil, fmt.Errorf("constructing registry client: %v", err)
-	}
-
-	manifest, bearerToken, err := registryClient.Manifest(req.Artifact.Repository, req.Artifact.Digest)
+func (s *scanner) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, error) {
+	manifest, err := s.registryClientFactory.Get().GetManifest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	tokenHeader := map[string]string{
-		"Connection":    "close",
-		"Authorization": fmt.Sprintf("Bearer %s", bearerToken),
-	}
+	layers := make([]clair.Layer, 0)
+
 	// form the chain by using the digests of all parent layers in the image, such that if another image is built on top of this image the layer name can be re-used.
 	shaChain := ""
 	for _, d := range manifest.References() {
@@ -80,10 +71,13 @@ func (s *imageScanner) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, err
 		}
 		shaChain += string(d.Digest) + "-"
 		l := clair.Layer{
-			Name:    fmt.Sprintf("%x", sha256.Sum256([]byte(shaChain))),
-			Headers: tokenHeader,
-			Format:  "Docker",
-			Path:    s.buildBlobURL(req.Registry.URL, req.Artifact.Repository, string(d.Digest)),
+			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(shaChain))),
+			Headers: map[string]string{
+				"Connection":    "close",
+				"Authorization": req.Registry.Authorization,
+			},
+			Format: "Docker",
+			Path:   s.buildBlobURL(req.Registry.URL, req.Artifact.Repository, string(d.Digest)),
 		}
 		if len(layers) > 0 {
 			l.ParentName = layers[len(layers)-1].Name
@@ -93,11 +87,11 @@ func (s *imageScanner) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, err
 	return layers, nil
 }
 
-func (s *imageScanner) buildBlobURL(endpoint, repository, digest string) string {
+func (s *scanner) buildBlobURL(endpoint, repository, digest string) string {
 	return fmt.Sprintf("%s/v2/%s/blobs/%s", endpoint, repository, digest)
 }
 
-func (s *imageScanner) GetReport(layerName string) (harbor.ScanReport, error) {
+func (s *scanner) GetReport(layerName string) (harbor.ScanReport, error) {
 	res, err := s.clairClient.GetLayer(layerName)
 	if err != nil {
 		return harbor.ScanReport{}, fmt.Errorf("getting layer %s: %v", layerName, err)
