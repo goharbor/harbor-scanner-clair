@@ -51,7 +51,7 @@ Configuration of the adapter is done via environment variables at startup.
         -key tls.key \
         -out tls.crt \
         -days 365 \
-        -subj /CN=harbor-scanner-trivy
+        -subj /CN=harbor-scanner-clair
       ```
    2. Create a `tls` secret from the two generated files:
       ```
