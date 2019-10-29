@@ -20,6 +20,7 @@ func NewServer(config etc.APIConfig, handler http.Handler) *Server {
 			Addr:         config.Addr,
 			ReadTimeout:  config.ReadTimeout,
 			WriteTimeout: config.WriteTimeout,
+			IdleTimeout:  config.IdleTimeout,
 		},
 	}
 }
@@ -29,10 +30,11 @@ func (s *Server) ListenAndServe() error {
 		log.WithFields(log.Fields{
 			"certificate": s.config.TLSCertificate,
 			"key":         s.config.TLSKey,
+			"addr":        s.config.Addr,
 		}).Debug("Starting API server with TLS")
 		return s.server.ListenAndServeTLS(s.config.TLSCertificate, s.config.TLSKey)
 	}
-	log.Warn("Starting API server without TLS")
+	log.WithField("addr", s.config.Addr).Warn("Starting API server without TLS")
 	return s.server.ListenAndServe()
 }
 

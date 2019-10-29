@@ -45,35 +45,78 @@ func TestGetLogLevel(t *testing.T) {
 	}
 }
 
-func TestGetAPIConfig(t *testing.T) {
+func TestGetConfig(t *testing.T) {
 	testCases := []struct {
 		name           string
 		envs           Envs
-		expectedConfig APIConfig
+		expectedConfig Config
 	}{
 		{
 			name: "Should return default config",
-			expectedConfig: APIConfig{
-				Addr:         ":8080",
-				ReadTimeout:  parseDuration(t, "15s"),
-				WriteTimeout: parseDuration(t, "15s"),
+			expectedConfig: Config{
+				API: APIConfig{
+					Addr:         ":8080",
+					ReadTimeout:  parseDuration(t, "15s"),
+					WriteTimeout: parseDuration(t, "15s"),
+					IdleTimeout:  parseDuration(t, "60s"),
+				},
+				TLS: TLSConfig{
+					InsecureSkipVerify: false,
+				},
+				Clair: ClairConfig{
+					URL: "http://harbor-harbor-clair:6060",
+				},
+				WorkPool: WorkPoolConfig{
+					MaxGoroutines: 10,
+				},
+				Metrics: MetricsConfig{
+					Addr:     ":9090",
+					Endpoint: "/metrics",
+				},
 			},
 		},
 		{
 			name: "Should overwrite default config with envs",
-			envs: map[string]string{
+			envs: Envs{
 				"SCANNER_API_SERVER_ADDR":            ":7654",
 				"SCANNER_API_SERVER_TLS_CERTIFICATE": "/certs/tls.crt",
 				"SCANNER_API_SERVER_TLS_KEY":         "/certs/tls.key",
 				"SCANNER_API_SERVER_READ_TIMEOUT":    "1h17m",
 				"SCANNER_API_SERVER_WRITE_TIMEOUT":   "2h5m",
+				"SCANNER_API_SERVER_IDLE_TIMEOUT":    "3m15s",
+
+				"SCANNER_TLS_INSECURE_SKIP_VERIFY": "true",
+				"SCANNER_TLS_CLIENTCAS":            "test/data/ca.crt",
+
+				"SCANNER_CLAIR_URL": "https://demo.clair:7080",
+
+				"SCANNER_WORK_POOL_MAX_GOROUTINES": "37",
+
+				"SCANNER_METRICS_ADDR":     ":3848",
+				"SCANNER_METRICS_ENDPOINT": "/prometheus/metrics",
 			},
-			expectedConfig: APIConfig{
-				Addr:           ":7654",
-				TLSCertificate: "/certs/tls.crt",
-				TLSKey:         "/certs/tls.key",
-				ReadTimeout:    parseDuration(t, "1h17m"),
-				WriteTimeout:   parseDuration(t, "2h5m"),
+			expectedConfig: Config{
+				API: APIConfig{
+					Addr:           ":7654",
+					TLSCertificate: "/certs/tls.crt",
+					TLSKey:         "/certs/tls.key",
+					ReadTimeout:    parseDuration(t, "1h17m"),
+					WriteTimeout:   parseDuration(t, "2h5m"),
+					IdleTimeout:    parseDuration(t, "3m15s"),
+				},
+				TLS: TLSConfig{
+					InsecureSkipVerify: false,
+				},
+				Clair: ClairConfig{
+					URL: "https://demo.clair:7080",
+				},
+				WorkPool: WorkPoolConfig{
+					MaxGoroutines: 37,
+				},
+				Metrics: MetricsConfig{
+					Addr:     ":3848",
+					Endpoint: "/prometheus/metrics",
+				},
 			},
 		},
 	}
@@ -82,9 +125,12 @@ func TestGetAPIConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			setenvs(t, tc.envs)
 
-			cfg, err := GetAPIConfig()
+			cfg, err := GetConfig()
 			require.NoError(t, err)
-			assert.Equal(t, tc.expectedConfig, cfg)
+			assert.Equal(t, tc.expectedConfig.API, cfg.API)
+			assert.Equal(t, tc.expectedConfig.Clair, cfg.Clair)
+			assert.Equal(t, tc.expectedConfig.WorkPool, cfg.WorkPool)
+			assert.Equal(t, tc.expectedConfig.Metrics, cfg.Metrics)
 		})
 	}
 
@@ -127,74 +173,8 @@ func TestAPIConfig_IsTLSEnabled(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			setenvs(t, tc.envs)
-			config, _ := GetAPIConfig()
-			assert.Equal(t, tc.expected, config.IsTLSEnabled())
-		})
-	}
-}
-
-func TestGetTLSConfig(t *testing.T) {
-	testCases := []struct {
-		name           string
-		envs           Envs
-		expectedConfig TLSConfig
-	}{
-		{
-			name: "Should return default config",
-			expectedConfig: TLSConfig{
-				InsecureSkipVerify: false,
-			},
-		},
-		{
-			name: "Should overwrite default config with envs",
-			envs: Envs{
-				"SCANNER_TLS_INSECURE_SKIP_VERIFY": "true",
-				"SCANNER_TLS_CLIENTCAS":            "test/data/ca.crt",
-			},
-			expectedConfig: TLSConfig{
-				InsecureSkipVerify: true},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			setenvs(t, tc.envs)
-			// TODO Assert on the actual cfg and RootCAs
-			_, err := GetTLSConfig()
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestGetClairConfig(t *testing.T) {
-	testCases := []struct {
-		name           string
-		envs           Envs
-		expectedConfig ClairConfig
-	}{
-		{
-			name: "Should return default config",
-			expectedConfig: ClairConfig{
-				URL: "http://harbor-harbor-clair:6060",
-			},
-		},
-		{
-			name: "Should overwrite default config with envs",
-			envs: map[string]string{
-				"SCANNER_CLAIR_URL": "https://demo.clair:7080",
-			},
-			expectedConfig: ClairConfig{
-				URL: "https://demo.clair:7080",
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			setenvs(t, tc.envs)
-			cfg, err := GetClairConfig()
-			require.NoError(t, err)
-			assert.Equal(t, tc.expectedConfig, cfg)
+			config, _ := GetConfig()
+			assert.Equal(t, tc.expected, config.API.IsTLSEnabled())
 		})
 	}
 }

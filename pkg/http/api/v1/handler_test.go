@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/job"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,35 +18,39 @@ import (
 )
 
 func TestRequestHandler_GetHealthy(t *testing.T) {
-	scanner := mock.NewScanner()
+	enqueuer := mock.NewEnqueuer()
+	store := mock.NewStore()
 
 	rr := httptest.NewRecorder()
 
 	r, err := http.NewRequest(http.MethodGet, "/probe/healthy", nil)
 	require.NoError(t, err)
 
-	NewAPIHandler(scanner).ServeHTTP(rr, r)
+	NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
 
 	rs := rr.Result()
 
 	assert.Equal(t, http.StatusOK, rs.StatusCode)
-	scanner.AssertExpectations(t)
+	enqueuer.AssertExpectations(t)
+	store.AssertExpectations(t)
 }
 
 func TestRequestHandler_GetReady(t *testing.T) {
-	scanner := mock.NewScanner()
+	enqueuer := mock.NewEnqueuer()
+	store := mock.NewStore()
 
 	rr := httptest.NewRecorder()
 
 	r, err := http.NewRequest(http.MethodGet, "/probe/ready", nil)
 	require.NoError(t, err)
 
-	NewAPIHandler(scanner).ServeHTTP(rr, r)
+	NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
 
 	rs := rr.Result()
 
 	assert.Equal(t, http.StatusOK, rs.StatusCode)
-	scanner.AssertExpectations(t)
+	enqueuer.AssertExpectations(t)
+	store.AssertExpectations(t)
 }
 
 func TestRequestHandler_AcceptScanRequest(t *testing.T) {
@@ -72,7 +77,7 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 
 	testCases := []struct {
 		name                string
-		scannerExpectation  *mock.Expectation
+		enqueuerExpectation *mock.Expectation
 		requestBody         string
 		expectedStatus      int
 		expectedContentType string
@@ -80,10 +85,10 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 	}{
 		{
 			name: "Should accept scan request",
-			scannerExpectation: &mock.Expectation{
-				Method:     "Scan",
+			enqueuerExpectation: &mock.Expectation{
+				Method:     "Enqueue",
 				Args:       []interface{}{validScanRequest},
-				ReturnArgs: []interface{}{harbor.ScanResponse{ID: "sr:123"}, nil},
+				ReturnArgs: []interface{}{"sr:123", nil},
 			},
 			requestBody:         validScanRequestJSON,
 			expectedStatus:      http.StatusAccepted,
@@ -127,10 +132,10 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 		},
 		{
 			name: "Should respond with error 500 when scan fails",
-			scannerExpectation: &mock.Expectation{
-				Method:     "Scan",
+			enqueuerExpectation: &mock.Expectation{
+				Method:     "Enqueue",
 				Args:       []interface{}{validScanRequest},
-				ReturnArgs: []interface{}{harbor.ScanResponse{}, errors.New("clair is down")},
+				ReturnArgs: []interface{}{"", errors.New("clair is down")},
 			},
 			requestBody:         validScanRequestJSON,
 			expectedStatus:      http.StatusInternalServerError,
@@ -141,22 +146,24 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			scanner := mock.NewScanner()
+			enqueuer := mock.NewEnqueuer()
+			store := mock.NewStore()
 
-			mock.ApplyExpectations(t, scanner, tc.scannerExpectation)
+			mock.ApplyExpectations(t, enqueuer, tc.enqueuerExpectation)
 
 			rr := httptest.NewRecorder()
 			r, err := http.NewRequest(http.MethodPost, "/api/v1/scan", strings.NewReader(tc.requestBody))
 			require.NoError(t, err)
 
-			NewAPIHandler(scanner).ServeHTTP(rr, r)
+			NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
 
 			assert.Equal(t, tc.expectedStatus, rr.Code)
 			assert.Equal(t, tc.expectedContentType, rr.Header().Get("Content-Type"))
 
 			assert.JSONEq(t, tc.expectedResponse, rr.Body.String())
 
-			scanner.AssertExpectations(t)
+			enqueuer.AssertExpectations(t)
+			store.AssertExpectations(t)
 		})
 	}
 }
@@ -166,53 +173,133 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 
 	testCases := []struct {
 		name                string
-		scannerExpectation  *mock.Expectation
+		storeExpectation    *mock.Expectation
 		expectedStatus      int
 		expectedContentType string
 		expectedResponse    string
 	}{
 		{
-			name: "Should respond with error 500 when getting scan report fails",
-			scannerExpectation: &mock.Expectation{
-				Method:     "GetReport",
-				Args:       []interface{}{"sr:123"},
-				ReturnArgs: []interface{}{harbor.ScanReport{}, errors.New("boom")},
+			name: "Should respond with error 500 when retrieving scan job fails",
+			storeExpectation: &mock.Expectation{
+				Method:     "Get",
+				Args:       []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{}, errors.New("data store is down")},
 			},
 			expectedStatus:      http.StatusInternalServerError,
 			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
 			expectedResponse: `{
   "error": {
-    "message": "getting scan report: boom"
+    "message": "getting scan job: data store is down"
+  }
+}`,
+		},
+		{
+			name: "Should respond with error 404 when scan job cannot be found",
+			storeExpectation: &mock.Expectation{
+				Method:     "Get",
+				Args:       []interface{}{"job:123"},
+				ReturnArgs: []interface{}{(*job.ScanJob)(nil), nil},
+			},
+			expectedStatus:      http.StatusNotFound,
+			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
+			expectedResponse: `{
+  "error": {
+    "message": "cannot find scan job: job:123"
+  }
+}`,
+		},
+		{
+			name: fmt.Sprintf("Should respond with found status 302 when scan job is %s", job.Queued),
+			storeExpectation: &mock.Expectation{
+				Method: "Get",
+				Args:   []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{
+					ID:     "job:123",
+					Status: job.Queued,
+				}, nil},
+			},
+			expectedStatus: http.StatusFound,
+		},
+		{
+			name: fmt.Sprintf("Should respond with found status 302 when scan job is %s", job.Pending),
+			storeExpectation: &mock.Expectation{
+				Method: "Get",
+				Args:   []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{
+					ID:     "job:123",
+					Status: job.Pending,
+				}, nil},
+			},
+			expectedStatus: http.StatusFound,
+		},
+		{
+			name: fmt.Sprintf("Should respond with error 500 when scan job is %s", job.Failed),
+			storeExpectation: &mock.Expectation{
+				Method: "Get",
+				Args:   []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{
+					ID:     "job:123",
+					Status: job.Failed,
+					Error:  "worker failed",
+				}, nil},
+			},
+			expectedStatus:      http.StatusInternalServerError,
+			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
+			expectedResponse: `{
+  "error": {
+    "message": "worker failed"
+  }
+}`,
+		},
+		{
+			name: fmt.Sprintf("Should respond with error 500 when scan job is NOT %s", job.Finished),
+			storeExpectation: &mock.Expectation{
+				Method: "Get",
+				Args:   []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{
+					ID:     "job:123",
+					Status: 666,
+				}, nil},
+			},
+			expectedStatus:      http.StatusInternalServerError,
+			expectedContentType: "application/vnd.scanner.adapter.error; version=1.0",
+			expectedResponse: `{
+  "error": {
+    "message": "unexpected status Unknown of scan job job:123"
   }
 }`,
 		},
 		{
 			name: "Should respond with vulnerabilities report",
-			scannerExpectation: &mock.Expectation{
-				Method: "GetReport",
-				Args:   []interface{}{"sr:123"},
-				ReturnArgs: []interface{}{harbor.ScanReport{
-					GeneratedAt: now,
-					Artifact: harbor.Artifact{
-						Repository: "library/mongo",
-						Digest:     "sha256:6c3c624b58dbbcd3c0dd82b4c53f04194d1247c6eebdaab7c610cf7d66709b3b",
-					},
-					Scanner: harbor.Scanner{
-						Name:    "Clair",
-						Vendor:  "CoreOS",
-						Version: "2.x",
-					},
-					Severity: harbor.SevCritical,
-					Vulnerabilities: []harbor.VulnerabilityItem{
-						{
-							ID:          "CVE-2019-1111",
-							Pkg:         "openssl",
-							Version:     "2.0-rc1",
-							FixVersion:  "2.1",
-							Severity:    harbor.SevCritical,
-							Description: "You'd better upgrade your server",
-							Links: []string{
-								"http://cve.com?id=CVE-2019-1111",
+			storeExpectation: &mock.Expectation{
+				Method: "Get",
+				Args:   []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{
+					ID:     "job:123",
+					Status: job.Finished,
+					Report: harbor.ScanReport{
+						GeneratedAt: now,
+						Artifact: harbor.Artifact{
+							Repository: "library/mongo",
+							Digest:     "sha256:6c3c624b58dbbcd3c0dd82b4c53f04194d1247c6eebdaab7c610cf7d66709b3b",
+						},
+						Scanner: harbor.Scanner{
+							Name:    "Clair",
+							Vendor:  "Core OS",
+							Version: "2.x",
+						},
+						Severity: harbor.SevCritical,
+						Vulnerabilities: []harbor.VulnerabilityItem{
+							{
+								ID:          "CVE-2019-1111",
+								Pkg:         "openssl",
+								Version:     "2.0-rc1",
+								FixVersion:  "2.1",
+								Severity:    harbor.SevCritical,
+								Description: "You'd better upgrade your server",
+								Links: []string{
+									"http://cve.com?id=CVE-2019-1111",
+								},
 							},
 						},
 					},
@@ -228,7 +315,7 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
   },
   "scanner": {
     "name": "Clair",
-    "vendor": "CoreOS",
+    "vendor": "Core OS",
     "version": "2.x"
   },
   "severity": "Critical",
@@ -251,15 +338,16 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			scanner := mock.NewScanner()
+			enqueuer := mock.NewEnqueuer()
+			store := mock.NewStore()
 
-			mock.ApplyExpectations(t, scanner, tc.scannerExpectation)
+			mock.ApplyExpectations(t, store, tc.storeExpectation)
 
 			rr := httptest.NewRecorder()
-			r, err := http.NewRequest(http.MethodGet, "/api/v1/scan/sr:123/report", nil)
+			r, err := http.NewRequest(http.MethodGet, "/api/v1/scan/job:123/report", nil)
 			require.NoError(t, err)
 
-			NewAPIHandler(scanner).ServeHTTP(rr, r)
+			NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
 
 			assert.Equal(t, tc.expectedStatus, rr.Code)
 			assert.Equal(t, tc.expectedContentType, rr.Header().Get("Content-Type"))
@@ -267,20 +355,22 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 				assert.JSONEq(t, tc.expectedResponse, rr.Body.String())
 			}
 
-			scanner.AssertExpectations(t)
+			enqueuer.AssertExpectations(t)
+			store.AssertExpectations(t)
 		})
 	}
 }
 
 func TestRequestHandler_GetMetadata(t *testing.T) {
-	scanner := mock.NewScanner()
+	enqueuer := mock.NewEnqueuer()
+	store := mock.NewStore()
 
 	rr := httptest.NewRecorder()
 
 	r, err := http.NewRequest(http.MethodGet, "/api/v1/metadata", nil)
 	require.NoError(t, err)
 
-	NewAPIHandler(scanner).ServeHTTP(rr, r)
+	NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
 
 	rs := rr.Result()
 
@@ -307,7 +397,8 @@ func TestRequestHandler_GetMetadata(t *testing.T) {
     "harbor.scanner-adapter/registry-authorization-type": "Bearer"
   }
 }`, rr.Body.String())
-	scanner.AssertExpectations(t)
+	enqueuer.AssertExpectations(t)
+	store.AssertExpectations(t)
 }
 
 func errorJSON(message string) string {
