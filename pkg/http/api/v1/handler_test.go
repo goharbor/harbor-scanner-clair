@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/job"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/mock"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

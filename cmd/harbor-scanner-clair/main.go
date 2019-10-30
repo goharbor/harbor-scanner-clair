@@ -2,15 +2,14 @@ package main
 
 import (
 	"context"
+	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
 	"github.com/goharbor/harbor-scanner-clair/pkg/metrics"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model"
 	"github.com/goharbor/harbor-scanner-clair/pkg/persistence/redis"
 	"github.com/goharbor/harbor-scanner-clair/pkg/registry"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner"
-	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/work"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -49,9 +48,9 @@ func main() {
 
 	registryClientFactory := registry.NewClientFactory(config.TLS)
 	clairClient := clair.NewClient(config.TLS, config.Clair)
-	s := clair.NewScanner(registryClientFactory, clairClient, model.NewTransformer())
+	adapter := scanner.NewAdapter(registryClientFactory, clairClient, scanner.NewTransformer())
 
-	enqueuer := scanner.NewEnqueuer(workPool, s, store)
+	enqueuer := scanner.NewEnqueuer(workPool, adapter, store)
 
 	apiHandler := v1.NewAPIHandler(enqueuer, store)
 

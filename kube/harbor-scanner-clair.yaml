@@ -8,9 +8,14 @@ spec:
     app: harbor-scanner-clair
   type: LoadBalancer
   ports:
-    - protocol: TCP
+    - name: api-server
+      protocol: TCP
       port: 8443
       targetPort: 8443
+    - name: metrics-server
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,12 +61,14 @@ spec:
             - name: "SCANNER_TLS_CLIENTCAS"
               value: ""
           ports:
-            - name: api-server-port
+            - name: api-server
               containerPort: 8443
+            - name: metrics-server
+              containerPort: 9090
           livenessProbe:
             httpGet:
               scheme: HTTPS
-              port: api-server-port
+              port: api-server
               path: /probe/healthy
             initialDelaySeconds: 5
             periodSeconds: 10

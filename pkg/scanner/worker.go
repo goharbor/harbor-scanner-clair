@@ -1,28 +1,17 @@
 package scanner
 
 import (
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/job"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/persistence"
-	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
-	"github.com/goharbor/harbor-scanner-clair/pkg/work"
 	log "github.com/sirupsen/logrus"
 )
 
 type worker struct {
 	store   persistence.Store
-	scanner clair.Scanner
+	adapter Adapter
 	jobID   string
 	request harbor.ScanRequest
-}
-
-func NewWorker(store persistence.Store, scanner clair.Scanner, jobID string, request harbor.ScanRequest) work.Worker {
-	return &worker{
-		store:   store,
-		scanner: scanner,
-		jobID:   jobID,
-		request: request,
-	}
 }
 
 func (as *worker) Task() {
@@ -44,7 +33,7 @@ func (as *worker) scan() error {
 	if err != nil {
 		return err
 	}
-	report, err := as.scanner.Scan(as.request)
+	report, err := as.adapter.Scan(as.request)
 	if err != nil {
 		return err
 	}

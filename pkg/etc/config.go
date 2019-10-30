@@ -4,7 +4,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/caarlos0/env/v6"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"

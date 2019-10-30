@@ -1,8 +1,9 @@
 package mock
 
 import (
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/docker/distribution"
+	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -12,6 +13,11 @@ type Transformer struct {
 
 func NewTransformer() *Transformer {
 	return &Transformer{}
+}
+
+func (m *Transformer) ToClairLayers(req harbor.ScanRequest, manifest distribution.Manifest) []clair.Layer {
+	args := m.Called(req, manifest)
+	return args.Get(0).([]clair.Layer)
 }
 
 func (m *Transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {

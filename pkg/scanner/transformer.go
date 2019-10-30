@@ -1,9 +1,13 @@
-package model
+package scanner
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/schema2"
+	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -17,6 +21,7 @@ func (c *systemClock) Now() time.Time {
 }
 
 type Transformer interface {
+	ToClairLayers(req harbor.ScanRequest, manifest distribution.Manifest) []clair.Layer
 	Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport
 }
 
@@ -30,6 +35,38 @@ func NewTransformer() *transformer {
 	return &transformer{
 		clock: &systemClock{},
 	}
+}
+
+func (t *transformer) ToClairLayers(req harbor.ScanRequest, manifest distribution.Manifest) []clair.Layer {
+	layers := make([]clair.Layer, 0)
+
+	// Form the chain by using the digests of all parent layers in the image, such that if another image is built
+	// on top of this image the layer name can be re-used.
+	shaChain := ""
+	for _, d := range manifest.References() {
+		if d.MediaType == schema2.MediaTypeImageConfig {
+			continue
+		}
+		shaChain += string(d.Digest) + "-"
+		l := clair.Layer{
+			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(shaChain))),
+			Headers: map[string]string{
+				"Connection":    "close",
+				"Authorization": req.Registry.Authorization,
+			},
+			Format: "Docker",
+			Path:   t.buildBlobURL(req.Registry.URL, req.Artifact.Repository, string(d.Digest)),
+		}
+		if len(layers) > 0 {
+			l.ParentName = layers[len(layers)-1].Name
+		}
+		layers = append(layers, l)
+	}
+	return layers
+}
+
+func (t *transformer) buildBlobURL(endpoint, repository, digest string) string {
+	return fmt.Sprintf("%s/v2/%s/blobs/%s", endpoint, repository, digest)
 }
 
 func (t *transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {
