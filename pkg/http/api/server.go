@@ -25,7 +25,16 @@ func NewServer(config etc.APIConfig, handler http.Handler) *Server {
 	}
 }
 
-func (s *Server) ListenAndServe() error {
+func (s *Server) ListenAndServe() {
+	go func() {
+		if err := s.listenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("Error: %v", err)
+		}
+		log.Trace("API server stopped listening for incoming connections")
+	}()
+}
+
+func (s *Server) listenAndServe() error {
 	if s.config.IsTLSEnabled() {
 		log.WithFields(log.Fields{
 			"certificate": s.config.TLSCertificate,
@@ -38,6 +47,10 @@ func (s *Server) ListenAndServe() error {
 	return s.server.ListenAndServe()
 }
 
-func (s *Server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+func (s *Server) Shutdown(ctx context.Context) {
+	log.Trace("API server shutdown started")
+	if err := s.server.Shutdown(context.Background()); err != nil {
+		log.WithError(err).Error("Error while shutting down API server")
+	}
+	log.Trace("API server shutdown completed")
 }

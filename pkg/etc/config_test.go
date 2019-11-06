@@ -69,10 +69,6 @@ func TestGetConfig(t *testing.T) {
 				WorkPool: WorkPoolConfig{
 					MaxGoroutines: 10,
 				},
-				Metrics: MetricsConfig{
-					Addr:     ":9090",
-					Endpoint: "/metrics",
-				},
 			},
 		},
 		{
@@ -113,10 +109,6 @@ func TestGetConfig(t *testing.T) {
 				WorkPool: WorkPoolConfig{
 					MaxGoroutines: 37,
 				},
-				Metrics: MetricsConfig{
-					Addr:     ":3848",
-					Endpoint: "/prometheus/metrics",
-				},
 			},
 		},
 	}
@@ -130,7 +122,6 @@ func TestGetConfig(t *testing.T) {
 			assert.Equal(t, tc.expectedConfig.API, cfg.API)
 			assert.Equal(t, tc.expectedConfig.Clair, cfg.Clair)
 			assert.Equal(t, tc.expectedConfig.WorkPool, cfg.WorkPool)
-			assert.Equal(t, tc.expectedConfig.Metrics, cfg.Metrics)
 		})
 	}
 

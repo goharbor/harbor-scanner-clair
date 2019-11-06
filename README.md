@@ -39,8 +39,6 @@ Configuration of the adapter is done via environment variables at startup.
 | `SCANNER_STORE_REDIS_POOL_MAX_IDLE`   | `5`  | The max number of idle connections in the pool for a redis store. |
 | `SCANNER_STORE_REDIS_SCAN_JOB_TTL`    | `1h` | The time to live for persisting scan jobs and associated scan reports. |
 | `SCANNER_WORK_POOL_MAX_GOROUTINES` | `10` | The maximum number of goroutines in the pool of workers processing scan requests. |
-| `SCANNER_METRICS_ADDR` | `:9090` | Binding address for the metrics HTTP server. |
-| `SCANNER_METRICS_ENDPOINT` | `/metrics` | The HTTP endpoint providing metrics. |
 
 ## Deploy to minikube
 

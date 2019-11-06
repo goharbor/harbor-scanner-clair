@@ -19,7 +19,6 @@ type Config struct {
 	Clair    ClairConfig
 	WorkPool WorkPoolConfig
 	Store    StoreConfig
-	Metrics  MetricsConfig
 }
 
 type APIConfig struct {
@@ -56,11 +55,6 @@ type StoreConfig struct {
 	PoolMaxActive int           `env:"SCANNER_STORE_REDIS_POOL_MAX_ACTIVE" envDefault:"5"`
 	PoolMaxIdle   int           `env:"SCANNER_STORE_REDIS_POOL_MAX_IDLE" envDefault:"5"`
 	ScanJobTTL    time.Duration `env:"SCANNER_STORE_REDIS_SCAN_JOB_TTL" envDefault:"1h"`
-}
-
-type MetricsConfig struct {
-	Addr     string `env:"SCANNER_METRICS_ADDR" envDefault:":9090"`
-	Endpoint string `env:"SCANNER_METRICS_ENDPOINT" envDefault:"/metrics"`
 }
 
 func GetLogLevel() logrus.Level {

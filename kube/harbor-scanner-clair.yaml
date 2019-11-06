@@ -12,10 +12,6 @@ spec:
       protocol: TCP
       port: 8443
       targetPort: 8443
-    - name: metrics-server
-      protocol: TCP
-      port: 9090
-      targetPort: 9090
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -63,8 +59,6 @@ spec:
           ports:
             - name: api-server
               containerPort: 8443
-            - name: metrics-server
-              containerPort: 9090
           livenessProbe:
             httpGet:
               scheme: HTTPS
@@ -76,7 +70,7 @@ spec:
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              port: api-server-port
+              port: api-server
               path: /probe/ready
             initialDelaySeconds: 5
             periodSeconds: 10
