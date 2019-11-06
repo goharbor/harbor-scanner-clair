@@ -57,15 +57,13 @@ func main() {
 	shutdownComplete := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 		captured := <-sigint
 		log.WithField("signal", captured.String()).Debug("Trapped os signal")
 
 		apiServer.Shutdown(context.Background())
-
-		log.Trace("Work pool shutdown started")
 		workPool.Shutdown()
-		log.Trace("Work pool shutdown completed")
+
 		close(shutdownComplete)
 	}()
 

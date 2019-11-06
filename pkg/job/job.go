@@ -7,8 +7,8 @@ import (
 type Status int
 
 const (
-	Queued Status = iota
-	Pending
+	Pending Status = iota
+	Running
 	Finished
 	Failed
 )
@@ -17,7 +17,7 @@ func (s Status) String() string {
 	if s < 0 || s > 3 {
 		return "Unknown"
 	}
-	return [...]string{"Queued", "Pending", "Finished", "Failed"}[s]
+	return [...]string{"Pending", "Running", "Finished", "Failed"}[s]
 }
 
 type ScanJob struct {

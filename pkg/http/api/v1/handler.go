@@ -151,7 +151,7 @@ func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	if scanJob.Status == job.Queued || scanJob.Status == job.Pending {
+	if scanJob.Status == job.Pending || scanJob.Status == job.Running {
 		reqLog.WithField("scan_job_status", scanJob.Status.String()).Debug("Scan job has not finished yet")
 		res.Header().Add("Location", req.URL.String())
 		res.WriteHeader(http.StatusFound)

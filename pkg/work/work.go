@@ -2,6 +2,7 @@ package work
 
 import (
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	log "github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -40,5 +41,7 @@ func (p *Pool) Run(w Worker) {
 
 // Shutdown waits for all the goroutines to shutdown.
 func (p *Pool) Shutdown() {
+	log.Trace("Work pool shutdown started")
 	close(p.tasks)
+	log.Trace("Work pool shutdown completed")
 }

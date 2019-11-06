@@ -45,7 +45,7 @@ var stringToSeverity = map[string]Severity{
 	"Critical":   SevCritical,
 }
 
-// MarshalJSON marshals the enum as a quoted json string
+// MarshalJSON marshals the enum as a quoted JSON string.
 func (s Severity) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString(`"`)
 	buffer.WriteString(severityToString[s])

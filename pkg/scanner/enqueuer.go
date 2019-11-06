@@ -34,7 +34,7 @@ func (e *enqueuer) Enqueue(request harbor.ScanRequest) (string, error) {
 	jobID := uuid.New().String()
 	err := e.store.Save(job.ScanJob{
 		ID:     jobID,
-		Status: job.Queued},
+		Status: job.Pending},
 	)
 	if err != nil {
 		return "", xerrors.Errorf("saving scan job: %w", err)

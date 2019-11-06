@@ -29,7 +29,7 @@ func (as *worker) Task() {
 }
 
 func (as *worker) scan() error {
-	err := as.store.UpdateStatus(as.jobID, job.Pending)
+	err := as.store.UpdateStatus(as.jobID, job.Running)
 	if err != nil {
 		return err
 	}

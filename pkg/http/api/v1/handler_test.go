@@ -209,18 +209,6 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 }`,
 		},
 		{
-			name: fmt.Sprintf("Should respond with found status 302 when scan job is %s", job.Queued),
-			storeExpectation: &mock.Expectation{
-				Method: "Get",
-				Args:   []interface{}{"job:123"},
-				ReturnArgs: []interface{}{&job.ScanJob{
-					ID:     "job:123",
-					Status: job.Queued,
-				}, nil},
-			},
-			expectedStatus: http.StatusFound,
-		},
-		{
 			name: fmt.Sprintf("Should respond with found status 302 when scan job is %s", job.Pending),
 			storeExpectation: &mock.Expectation{
 				Method: "Get",
@@ -228,6 +216,18 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 				ReturnArgs: []interface{}{&job.ScanJob{
 					ID:     "job:123",
 					Status: job.Pending,
+				}, nil},
+			},
+			expectedStatus: http.StatusFound,
+		},
+		{
+			name: fmt.Sprintf("Should respond with found status 302 when scan job is %s", job.Running),
+			storeExpectation: &mock.Expectation{
+				Method: "Get",
+				Args:   []interface{}{"job:123"},
+				ReturnArgs: []interface{}{&job.ScanJob{
+					ID:     "job:123",
+					Status: job.Running,
 				}, nil},
 			},
 			expectedStatus: http.StatusFound,
