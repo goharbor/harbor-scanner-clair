@@ -20,7 +20,7 @@ func (m *Transformer) ToClairLayers(req harbor.ScanRequest, manifest distributio
 	return args.Get(0).([]clair.Layer)
 }
 
-func (m *Transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {
-	args := m.Called(artifact, source)
+func (m *Transformer) ToHarborScanReport(artifact harbor.Artifact, layer *clair.Layer) harbor.ScanReport {
+	args := m.Called(artifact, layer)
 	return args.Get(0).(harbor.ScanReport)
 }

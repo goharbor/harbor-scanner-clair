@@ -8,7 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Adapter wraps the Scan method.
 type Adapter interface {
+	// Scan adapts a Harbor ScanRequest to Clair API calls and then maps the response Clair layer to Harbor ScanReport.
+	// Returns error in case of failures.
 	Scan(req harbor.ScanRequest) (harbor.ScanReport, error)
 }
 
@@ -57,10 +60,10 @@ func (s *adapter) prepareLayers(req harbor.ScanRequest) ([]clair.Layer, error) {
 }
 
 func (s *adapter) getReport(artifact harbor.Artifact, layerName string) (harbor.ScanReport, error) {
-	res, err := s.clairClient.GetLayer(layerName)
+	envelope, err := s.clairClient.GetLayer(layerName)
 	if err != nil {
 		return harbor.ScanReport{}, fmt.Errorf("getting layer %s: %v", layerName, err)
 	}
-	scanReport := s.transformer.Transform(artifact, *res)
+	scanReport := s.transformer.ToHarborScanReport(artifact, envelope.Layer)
 	return scanReport, nil
 }

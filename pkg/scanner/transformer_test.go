@@ -30,7 +30,7 @@ func TestTransformer_ToClairLayers(t *testing.T) {
 			Digest:     "sha256:d66da0a3b3b856a737168f28549be04512d9c9af2ff5120686d75d3a55e4af57",
 		},
 	}
-	manifiest := schema2.DeserializedManifest{
+	mf := schema2.DeserializedManifest{
 		Manifest: schema2.Manifest{
 			Versioned: manifest.Versioned{
 				SchemaVersion: 2,
@@ -53,7 +53,7 @@ func TestTransformer_ToClairLayers(t *testing.T) {
 		},
 	}
 
-	layers := NewTransformer().ToClairLayers(req, manifiest)
+	layers := NewTransformer().ToClairLayers(req, mf)
 	assert.Equal(t, []clair.Layer{
 		{
 			Name: "31d8546ce949163443fad8147ad5831fc5ecc6efc889a06d2a3b93af56dd4bcd",
@@ -77,7 +77,7 @@ func TestTransformer_ToClairLayers(t *testing.T) {
 	}, layers)
 }
 
-func TestTransformer_Transform(t *testing.T) {
+func TestTransformer_ToHarborScanReport(t *testing.T) {
 	transformer := NewTransformer()
 	fixedTime := time.Now()
 	transformer.clock = &fixedClock{fixedTime: fixedTime}
@@ -87,74 +87,72 @@ func TestTransformer_Transform(t *testing.T) {
 		Digest:     "sha256:70acd789bbbe58a2bbad70880e0ee1dc131846bd2f6c5f5ba459bad8a5b94815",
 		MimeType:   "application/vnd.docker.distribution.manifest.v2+json",
 	}
-	source := clair.LayerEnvelope{
-		Layer: &clair.Layer{
-			Features: []clair.Feature{
-				{
-					Name:    "e2fsprogs",
-					Version: "1.43.4-2",
-					Vulnerabilities: []clair.Vulnerability{
-						{
-							Name:        "CVE-2019-5094",
-							Description: "CVE-2019-5094 desc",
-							Link:        "https://security-tracker.debian.org/tracker/CVE-2019-5094",
-							Severity:    "Medium",
-							FixedBy:     "1.43.4-2+deb9u1",
-						}},
-				},
-				{
-					Name:    "glibc",
-					Version: "2.24-11+deb9u4",
-					Vulnerabilities: []clair.Vulnerability{
-						{
-							Name:        "CVE-2019-1010023",
-							Description: "CVE-2019-1010023 desc",
-							Link:        "https://security-tracker.debian.org/tracker/CVE-2019-1010023",
-							Severity:    "Negligible",
-						},
-						{
-							Name:        "CVE-2018-6485",
-							Description: "CVE-2018-6485 desc",
-							Link:        "https://security-tracker.debian.org/tracker/CVE-2018-6485",
-							Severity:    "High",
-						},
+	source := &clair.Layer{
+		Features: []clair.Feature{
+			{
+				Name:    "e2fsprogs",
+				Version: "1.43.4-2",
+				Vulnerabilities: []clair.Vulnerability{
+					{
+						Name:        "CVE-2019-5094",
+						Description: "CVE-2019-5094 desc",
+						Link:        "https://security-tracker.debian.org/tracker/CVE-2019-5094",
+						Severity:    "Medium",
+						FixedBy:     "1.43.4-2+deb9u1",
+					}},
+			},
+			{
+				Name:    "glibc",
+				Version: "2.24-11+deb9u4",
+				Vulnerabilities: []clair.Vulnerability{
+					{
+						Name:        "CVE-2019-1010023",
+						Description: "CVE-2019-1010023 desc",
+						Link:        "https://security-tracker.debian.org/tracker/CVE-2019-1010023",
+						Severity:    "Negligible",
+					},
+					{
+						Name:        "CVE-2018-6485",
+						Description: "CVE-2018-6485 desc",
+						Link:        "https://security-tracker.debian.org/tracker/CVE-2018-6485",
+						Severity:    "High",
 					},
 				},
-				{
-					Name:            "package1",
-					Version:         "package1.version",
-					Vulnerabilities: nil,
-				},
-				{
-					Name:    "package2",
-					Version: "package2.version",
-					Vulnerabilities: []clair.Vulnerability{
-						{
-							Name:        "CVE-2019-0005",
-							Description: "CVE-2019-0005.desc",
-							Severity:    "Low",
-						},
-						{
-							Name:        "CVE-2019-0030",
-							Description: "CVE-2019-0030.desc",
-							Severity:    "Unknown",
-						},
-						{
-							Name:        "CVE-2019-8877",
-							Description: "CVE-2019-8877.desc",
-							Severity:    "Critical",
-						},
-						{
-							Name:        "CVE-2019-6666",
-							Description: "CVE-2019-6666.desc",
-							Severity:    "~~UNRECOGNIZED~~",
-						},
+			},
+			{
+				Name:            "package1",
+				Version:         "package1.version",
+				Vulnerabilities: nil,
+			},
+			{
+				Name:    "package2",
+				Version: "package2.version",
+				Vulnerabilities: []clair.Vulnerability{
+					{
+						Name:        "CVE-2019-0005",
+						Description: "CVE-2019-0005.desc",
+						Severity:    "Low",
+					},
+					{
+						Name:        "CVE-2019-0030",
+						Description: "CVE-2019-0030.desc",
+						Severity:    "Unknown",
+					},
+					{
+						Name:        "CVE-2019-8877",
+						Description: "CVE-2019-8877.desc",
+						Severity:    "Critical",
+					},
+					{
+						Name:        "CVE-2019-6666",
+						Description: "CVE-2019-6666.desc",
+						Severity:    "~~UNRECOGNIZED~~",
 					},
 				},
 			},
 		},
 	}
-	scanReport := transformer.Transform(artifact, source)
+	scanReport := transformer.ToHarborScanReport(artifact, source)
 	assert.Equal(t, harbor.ScanReport{
 		GeneratedAt: fixedTime,
 		Artifact: harbor.Artifact{

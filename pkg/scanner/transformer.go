@@ -22,7 +22,7 @@ func (c *systemClock) Now() time.Time {
 
 type Transformer interface {
 	ToClairLayers(req harbor.ScanRequest, manifest distribution.Manifest) []clair.Layer
-	Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport
+	ToHarborScanReport(artifact harbor.Artifact, layer *clair.Layer) harbor.ScanReport
 }
 
 type transformer struct {
@@ -69,7 +69,7 @@ func (t *transformer) buildBlobURL(endpoint, repository, digest string) string {
 	return fmt.Sprintf("%s/v2/%s/blobs/%s", endpoint, repository, digest)
 }
 
-func (t *transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {
+func (t *transformer) ToHarborScanReport(artifact harbor.Artifact, source *clair.Layer) harbor.ScanReport {
 	return harbor.ScanReport{
 		GeneratedAt:     t.clock.Now(),
 		Scanner:         etc.GetScannerMetadata(),
@@ -80,11 +80,10 @@ func (t *transformer) Transform(artifact harbor.Artifact, source clair.LayerEnve
 }
 
 // TransformVuln is for running scanning job in both job service V1 and V2.
-func (t *transformer) toComponentsOverview(envelope clair.LayerEnvelope) harbor.Severity {
+func (t *transformer) toComponentsOverview(layer *clair.Layer) harbor.Severity {
 	vulnMap := make(map[harbor.Severity]int)
-	features := envelope.Layer.Features
 	var temp harbor.Severity
-	for _, f := range features {
+	for _, f := range layer.Features {
 		sev := harbor.SevNone
 		for _, v := range f.Vulnerabilities {
 			temp = t.toHarborSeverity(v.Severity)
@@ -105,9 +104,8 @@ func (t *transformer) toComponentsOverview(envelope clair.LayerEnvelope) harbor.
 }
 
 // transformVulnerabilities transforms the returned value of Clair API to a list of VulnerabilityItem
-func (t *transformer) toVulnerabilityItems(envelope clair.LayerEnvelope) []harbor.VulnerabilityItem {
+func (t *transformer) toVulnerabilityItems(l *clair.Layer) []harbor.VulnerabilityItem {
 	var res []harbor.VulnerabilityItem
-	l := envelope.Layer
 	if l == nil {
 		return res
 	}

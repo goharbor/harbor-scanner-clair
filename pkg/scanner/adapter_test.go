@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestImageScanner_Scan(t *testing.T) {
+func TestAdapter_Scan(t *testing.T) {
 	req := harbor.ScanRequest{
 		Registry: harbor.Registry{
 			URL:           "https://core.harbor.domain",
@@ -80,13 +80,9 @@ func TestImageScanner_Scan(t *testing.T) {
 	clairClient.On("ScanLayer", cl[0]).Return(nil)
 	clairClient.On("ScanLayer", cl[1]).Return(nil)
 
-	le := &clair.LayerEnvelope{
-		Layer: &cl[1],
-	}
-
 	clairClient.On("GetLayer", "d10095311d9a7dde7d350fdab383ef1e525ec793c33ca941ac593675762bc5d8").
-		Return(le, nil)
-	transformer.On("Transform", req.Artifact, *le).
+		Return(&clair.LayerEnvelope{Layer: &cl[1]}, nil)
+	transformer.On("ToHarborScanReport", req.Artifact, &cl[1]).
 		Return(harbor.ScanReport{}, nil)
 
 	scanner := NewAdapter(registryClientFactory, clairClient, transformer)
