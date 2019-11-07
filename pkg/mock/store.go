@@ -14,7 +14,7 @@ func NewStore() *Store {
 	return &Store{}
 }
 
-func (s *Store) Save(scanJob job.ScanJob) error {
+func (s *Store) Create(scanJob job.ScanJob) error {
 	args := s.Called(scanJob)
 	return args.Error(0)
 }
@@ -29,7 +29,7 @@ func (s *Store) UpdateStatus(scanJobID string, newStatus job.Status, error ...st
 	return args.Error(0)
 }
 
-func (s *Store) UpdateReport(scanJobID string, reports harbor.ScanReport) error {
-	args := s.Called(scanJobID, reports)
+func (s *Store) UpdateReport(scanJobID string, report harbor.ScanReport) error {
+	args := s.Called(scanJobID, report)
 	return args.Error(0)
 }

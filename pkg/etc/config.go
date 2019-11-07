@@ -17,7 +17,7 @@ type Config struct {
 	API   APIConfig
 	TLS   TLSConfig
 	Clair ClairConfig
-	Store StoreConfig
+	Store Store
 }
 
 type APIConfig struct {
@@ -44,8 +44,8 @@ type ClairConfig struct {
 	URL string `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
 }
 
-type StoreConfig struct {
-	RedisURL      string        `env:"SCANNER_STORE_REDIS_URL" envDefault:"redis://localhost:6379"`
+type Store struct {
+	RedisURL      string        `env:"SCANNER_STORE_REDIS_URL" envDefault:"redis://harbor-harbor-redis:6379"`
 	Namespace     string        `env:"SCANNER_STORE_REDIS_NAMESPACE" envDefault:"harbor.scanner.clair:store"`
 	PoolMaxActive int           `env:"SCANNER_STORE_REDIS_POOL_MAX_ACTIVE" envDefault:"5"`
 	PoolMaxIdle   int           `env:"SCANNER_STORE_REDIS_POOL_MAX_IDLE" envDefault:"5"`

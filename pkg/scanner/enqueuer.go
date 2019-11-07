@@ -32,12 +32,12 @@ type enqueuer struct {
 
 func (e *enqueuer) Enqueue(request harbor.ScanRequest) (string, error) {
 	jobID := uuid.New().String()
-	err := e.store.Save(job.ScanJob{
+	err := e.store.Create(job.ScanJob{
 		ID:     jobID,
 		Status: job.Pending},
 	)
 	if err != nil {
-		return "", xerrors.Errorf("saving scan job: %w", err)
+		return "", xerrors.Errorf("creating scan job: %w", err)
 	}
 	e.pool.Run(&worker{
 		store:   e.store,

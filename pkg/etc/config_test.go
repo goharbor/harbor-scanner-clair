@@ -66,6 +66,13 @@ func TestGetConfig(t *testing.T) {
 				Clair: ClairConfig{
 					URL: "http://harbor-harbor-clair:6060",
 				},
+				Store: Store{
+					RedisURL:      "redis://harbor-harbor-redis:6379",
+					Namespace:     "harbor.scanner.clair:store",
+					PoolMaxActive: 5,
+					PoolMaxIdle:   5,
+					ScanJobTTL:    parseDuration(t, "1h"),
+				},
 			},
 		},
 		{
@@ -98,6 +105,13 @@ func TestGetConfig(t *testing.T) {
 				Clair: ClairConfig{
 					URL: "https://demo.clair:7080",
 				},
+				Store: Store{
+					RedisURL:      "redis://harbor-harbor-redis:6379",
+					Namespace:     "harbor.scanner.clair:store",
+					PoolMaxActive: 5,
+					PoolMaxIdle:   5,
+					ScanJobTTL:    parseDuration(t, "1h"),
+				},
 			},
 		},
 	}
@@ -110,6 +124,7 @@ func TestGetConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedConfig.API, cfg.API)
 			assert.Equal(t, tc.expectedConfig.Clair, cfg.Clair)
+			assert.Equal(t, tc.expectedConfig.Store, cfg.Store)
 		})
 	}
 
