@@ -1,9 +1,7 @@
 package work
 
 import (
-	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	log "github.com/sirupsen/logrus"
-	"sync"
 )
 
 // Worker must be implemented by types that want to use the worker pool.
@@ -15,23 +13,32 @@ type Worker interface {
 // that are submitted
 type Pool struct {
 	tasks chan Worker
-	wg    sync.WaitGroup
+	stop  chan struct{}
 }
 
-func New(config etc.WorkPoolConfig) *Pool {
-	p := Pool{
+func New() *Pool {
+	return &Pool{
 		tasks: make(chan Worker),
+		stop:  make(chan struct{}),
 	}
-	p.wg.Add(config.MaxGoroutines)
-	for i := 0; i < config.MaxGoroutines; i++ {
-		go func() {
-			for w := range p.tasks {
-				w.Task()
+}
+
+func (p *Pool) Start() {
+	go func() {
+		log.Trace("Work pool started")
+		for {
+			select {
+			case w := <-p.tasks:
+				go func() {
+					log.Trace("Work pool received new task")
+					w.Task()
+				}()
+			case <-p.stop:
+				log.Trace("Work pool shutdown completed")
+				return
 			}
-			p.wg.Done()
-		}()
-	}
-	return &p
+		}
+	}()
 }
 
 // Run submits work to the pool
@@ -42,6 +49,5 @@ func (p *Pool) Run(w Worker) {
 // Shutdown waits for all the goroutines to shutdown.
 func (p *Pool) Shutdown() {
 	log.Trace("Work pool shutdown started")
-	close(p.tasks)
-	log.Trace("Work pool shutdown completed")
+	close(p.stop)
 }

@@ -38,7 +38,6 @@ Configuration of the adapter is done via environment variables at startup.
 | `SCANNER_STORE_REDIS_POOL_MAX_ACTIVE` | `5`  | The max number of connections allocated by the pool for a redis store. |
 | `SCANNER_STORE_REDIS_POOL_MAX_IDLE`   | `5`  | The max number of idle connections in the pool for a redis store. |
 | `SCANNER_STORE_REDIS_SCAN_JOB_TTL`    | `1h` | The time to live for persisting scan jobs and associated scan reports. |
-| `SCANNER_WORK_POOL_MAX_GOROUTINES` | `10` | The maximum number of goroutines in the pool of workers processing scan requests. |
 
 ## Deploy to minikube
 

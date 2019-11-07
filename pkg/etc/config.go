@@ -14,11 +14,10 @@ import (
 )
 
 type Config struct {
-	API      APIConfig
-	TLS      TLSConfig
-	Clair    ClairConfig
-	WorkPool WorkPoolConfig
-	Store    StoreConfig
+	API   APIConfig
+	TLS   TLSConfig
+	Clair ClairConfig
+	Store StoreConfig
 }
 
 type APIConfig struct {
@@ -43,10 +42,6 @@ type TLSConfig struct {
 
 type ClairConfig struct {
 	URL string `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
-}
-
-type WorkPoolConfig struct {
-	MaxGoroutines int `env:"SCANNER_WORK_POOL_MAX_GOROUTINES" envDefault:"10"`
 }
 
 type StoreConfig struct {

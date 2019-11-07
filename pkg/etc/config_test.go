@@ -66,9 +66,6 @@ func TestGetConfig(t *testing.T) {
 				Clair: ClairConfig{
 					URL: "http://harbor-harbor-clair:6060",
 				},
-				WorkPool: WorkPoolConfig{
-					MaxGoroutines: 10,
-				},
 			},
 		},
 		{
@@ -85,11 +82,6 @@ func TestGetConfig(t *testing.T) {
 				"SCANNER_TLS_CLIENTCAS":            "test/data/ca.crt",
 
 				"SCANNER_CLAIR_URL": "https://demo.clair:7080",
-
-				"SCANNER_WORK_POOL_MAX_GOROUTINES": "37",
-
-				"SCANNER_METRICS_ADDR":     ":3848",
-				"SCANNER_METRICS_ENDPOINT": "/prometheus/metrics",
 			},
 			expectedConfig: Config{
 				API: APIConfig{
@@ -106,9 +98,6 @@ func TestGetConfig(t *testing.T) {
 				Clair: ClairConfig{
 					URL: "https://demo.clair:7080",
 				},
-				WorkPool: WorkPoolConfig{
-					MaxGoroutines: 37,
-				},
 			},
 		},
 	}
@@ -121,7 +110,6 @@ func TestGetConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedConfig.API, cfg.API)
 			assert.Equal(t, tc.expectedConfig.Clair, cfg.Clair)
-			assert.Equal(t, tc.expectedConfig.WorkPool, cfg.WorkPool)
 		})
 	}
 

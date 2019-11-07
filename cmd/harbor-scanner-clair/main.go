@@ -36,7 +36,7 @@ func main() {
 
 	store := redis.NewStore(config.Store)
 
-	workPool := work.New(config.WorkPool)
+	workPool := work.New()
 
 	log.WithFields(log.Fields{
 		"version":  version,
@@ -67,6 +67,7 @@ func main() {
 		close(shutdownComplete)
 	}()
 
+	workPool.Start()
 	apiServer.ListenAndServe()
 
 	<-shutdownComplete
