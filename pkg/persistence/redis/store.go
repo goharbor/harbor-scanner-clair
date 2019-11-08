@@ -46,10 +46,10 @@ func (s *store) Create(scanJob job.ScanJob) error {
 		"scan_job_id":     scanJob.ID,
 		"scan_job_status": scanJob.Status.String(),
 		"redis_key":       key,
-		"expire":          s.cfg.ScanJobTTL.String(),
+		"expire":          s.cfg.ScanJobTTL.Seconds(),
 	}).Trace("Creating scan job")
 
-	_, err = conn.Do("SET", key, string(bytes), "NX", "EX", int(s.cfg.ScanJobTTL))
+	_, err = conn.Do("SET", key, string(bytes), "NX", "EX", int(s.cfg.ScanJobTTL.Seconds()))
 	if err != nil {
 		return xerrors.Errorf("creating scan job: %w", err)
 	}
@@ -72,7 +72,7 @@ func (s *store) update(scanJob job.ScanJob) error {
 		"scan_job_id":     scanJob.ID,
 		"scan_job_status": scanJob.Status.String(),
 		"redis_key":       key,
-		"expire":          s.cfg.ScanJobTTL.String(),
+		"expire":          s.cfg.ScanJobTTL.Seconds(),
 	}).Debug("Updating scan job")
 
 	_, err = conn.Do("SET", key, string(bytes), "XX", "EX", int(s.cfg.ScanJobTTL.Seconds()))
@@ -145,6 +145,6 @@ func (s *store) getKeyForScanJob(scanJobID string) string {
 func (s *store) close(conn redis.Conn) {
 	err := conn.Close()
 	if err != nil {
-		log.Errorf("Error while closing connection: %v", err)
+		log.WithError(err).Error("Error while closing connection")
 	}
 }
