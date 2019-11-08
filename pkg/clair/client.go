@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,8 +13,8 @@ import (
 
 // Client communicates with clair endpoint to scan image and get detailed scan result
 type Client interface {
-	ScanLayer(layer clair.Layer) error
-	GetLayer(layerName string) (*clair.LayerEnvelope, error)
+	ScanLayer(layer Layer) error
+	GetLayer(layerName string) (*LayerEnvelope, error)
 }
 
 type client struct {
@@ -38,8 +37,8 @@ func NewClient(tlsConfig etc.TLSConfig, cfg etc.ClairConfig) Client {
 }
 
 // ScanLayer calls Clair's API to scan a layer.
-func (c *client) ScanLayer(layer clair.Layer) error {
-	envelope := clair.LayerEnvelope{
+func (c *client) ScanLayer(layer Layer) error {
+	envelope := LayerEnvelope{
 		Layer: &layer,
 	}
 	data, err := json.Marshal(envelope)
@@ -59,7 +58,7 @@ func (c *client) ScanLayer(layer clair.Layer) error {
 }
 
 // GetLayer calls Clair's API to get layers with detailed vulnerability list.
-func (c *client) GetLayer(layerName string) (*clair.LayerEnvelope, error) {
+func (c *client) GetLayer(layerName string) (*LayerEnvelope, error) {
 	url := c.endpointURL + "/v1/layers/" + layerName + "?features&vulnerabilities"
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -69,7 +68,7 @@ func (c *client) GetLayer(layerName string) (*clair.LayerEnvelope, error) {
 	if err != nil {
 		return nil, err
 	}
-	var res clair.LayerEnvelope
+	var res LayerEnvelope
 	err = json.Unmarshal(b, &res)
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package harbor
 
 import (
 	"bytes"
+	"encoding/json"
 	"time"
 )
 
@@ -34,12 +35,33 @@ var severityToString = map[Severity]string{
 	SevCritical:   "Critical",
 }
 
-// MarshalJSON marshals the enum as a quoted json string
+var stringToSeverity = map[string]Severity{
+	"Unknown":    SevUnknown,
+	"None":       SevNone,
+	"Negligible": SevNegligible,
+	"Low":        SevLow,
+	"Medium":     SevMedium,
+	"High":       SevHigh,
+	"Critical":   SevCritical,
+}
+
+// MarshalJSON marshals the enum as a quoted JSON string.
 func (s Severity) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString(`"`)
 	buffer.WriteString(severityToString[s])
 	buffer.WriteString(`"`)
 	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON unmarshals quoted JSON string to the Severity enum value.
+func (s *Severity) UnmarshalJSON(b []byte) error {
+	var value string
+	err := json.Unmarshal(b, &value)
+	if err != nil {
+		return err
+	}
+	*s = stringToSeverity[value]
+	return nil
 }
 
 type Registry struct {

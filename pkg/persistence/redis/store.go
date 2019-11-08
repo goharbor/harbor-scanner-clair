@@ -1,0 +1,150 @@
+package redis
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/job"
+	"github.com/goharbor/harbor-scanner-clair/pkg/persistence"
+	"github.com/gomodule/redigo/redis"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
+)
+
+type store struct {
+	cfg  etc.Store
+	pool redis.Pool
+}
+
+func NewStore(cfg etc.Store) persistence.Store {
+	return &store{
+		cfg: cfg,
+		pool: redis.Pool{
+			Dial: func() (redis.Conn, error) {
+				return redis.DialURL(cfg.RedisURL)
+			},
+			MaxIdle:   cfg.PoolMaxIdle,
+			MaxActive: cfg.PoolMaxActive,
+			Wait:      true,
+		},
+	}
+}
+
+func (s *store) Create(scanJob job.ScanJob) error {
+	conn := s.pool.Get()
+	defer s.close(conn)
+
+	bytes, err := json.Marshal(scanJob)
+	if err != nil {
+		return xerrors.Errorf("marshalling scan job: %w", err)
+	}
+
+	key := s.getKeyForScanJob(scanJob.ID)
+
+	log.WithFields(log.Fields{
+		"scan_job_id":     scanJob.ID,
+		"scan_job_status": scanJob.Status.String(),
+		"redis_key":       key,
+		"expire":          s.cfg.ScanJobTTL.String(),
+	}).Trace("Creating scan job")
+
+	_, err = conn.Do("SET", key, string(bytes), "NX", "EX", int(s.cfg.ScanJobTTL))
+	if err != nil {
+		return xerrors.Errorf("creating scan job: %w", err)
+	}
+
+	return nil
+}
+
+func (s *store) update(scanJob job.ScanJob) error {
+	conn := s.pool.Get()
+	defer s.close(conn)
+
+	bytes, err := json.Marshal(scanJob)
+	if err != nil {
+		return xerrors.Errorf("marshalling scan job: %w", err)
+	}
+
+	key := s.getKeyForScanJob(scanJob.ID)
+
+	log.WithFields(log.Fields{
+		"scan_job_id":     scanJob.ID,
+		"scan_job_status": scanJob.Status.String(),
+		"redis_key":       key,
+		"expire":          s.cfg.ScanJobTTL.String(),
+	}).Debug("Updating scan job")
+
+	_, err = conn.Do("SET", key, string(bytes), "XX", "EX", int(s.cfg.ScanJobTTL.Seconds()))
+	if err != nil {
+		return xerrors.Errorf("updating scan job: %w", err)
+	}
+
+	return nil
+}
+
+func (s *store) Get(scanJobID string) (*job.ScanJob, error) {
+	conn := s.pool.Get()
+	defer s.close(conn)
+
+	key := s.getKeyForScanJob(scanJobID)
+	value, err := redis.String(conn.Do("GET", key))
+	if err != nil {
+		if err == redis.ErrNil {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var scanJob job.ScanJob
+	err = json.Unmarshal([]byte(value), &scanJob)
+	if err != nil {
+		return nil, err
+	}
+
+	return &scanJob, nil
+}
+
+func (s *store) UpdateStatus(scanJobID string, newStatus job.Status, error ...string) error {
+	log.WithFields(log.Fields{
+		"scan_job_id": scanJobID,
+		"new_status":  newStatus.String(),
+	}).Trace("Updating status for scan job")
+
+	scanJob, err := s.Get(scanJobID)
+	if err != nil {
+		return err
+	}
+
+	scanJob.Status = newStatus
+	if len(error) > 0 {
+		scanJob.Error = error[0]
+	}
+
+	return s.update(*scanJob)
+}
+
+func (s *store) UpdateReport(scanJobID string, report harbor.ScanReport) error {
+	log.WithFields(log.Fields{
+		"scan_job_id": scanJobID,
+	}).Trace("Updating reports for scan job")
+
+	scanJob, err := s.Get(scanJobID)
+	if err != nil {
+		return err
+	}
+
+	scanJob.Report = report
+	return s.update(*scanJob)
+}
+
+func (s *store) getKeyForScanJob(scanJobID string) string {
+	return fmt.Sprintf("%s:scan-job:%s", s.cfg.Namespace, scanJobID)
+}
+
+func (s *store) close(conn redis.Conn) {
+	err := conn.Close()
+	if err != nil {
+		log.Errorf("Error while closing connection: %v", err)
+	}
+}

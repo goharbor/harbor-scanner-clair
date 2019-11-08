@@ -31,7 +31,13 @@ Configuration of the adapter is done via environment variables at startup.
 | `SCANNER_TLS_CLIENTCAS` | | An array of absolute paths to x509 CA files that will be added to host's root CA set. |
 | `SCANNER_API_SERVER_READ_TIMEOUT`  | `15s` | The maximum duration for reading the entire request, including the body. |
 | `SCANNER_API_SERVER_WRITE_TIMEOUT` | `15s` | The maximum duration before timing out writes of the response. |
+| `SCANNER_API_SERVER_IDLE_TIMEOUT`  | `60s` | The maximum amount of time to wait for the next request when keep-alives are enabled. |
 | `SCANNER_CLAIR_URL`                | `http://harbor-harbor-clair:6060` | Clair URL |
+| `SCANNER_STORE_REDIS_URL`       | `redis://harbor-harbor-redis:6379` | Redis server URI for a redis store. |
+| `SCANNER_STORE_REDIS_NAMESPACE` | `harbor.scanner.clair:store` | A namespace for keys in a redis store. |
+| `SCANNER_STORE_REDIS_POOL_MAX_ACTIVE` | `5`  | The max number of connections allocated by the pool for a redis store. |
+| `SCANNER_STORE_REDIS_POOL_MAX_IDLE`   | `5`  | The max number of idle connections in the pool for a redis store. |
+| `SCANNER_STORE_REDIS_SCAN_JOB_TTL`    | `1h` | The time to live for persisting scan jobs and associated scan reports. |
 
 ## Deploy to minikube
 

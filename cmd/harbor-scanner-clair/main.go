@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model"
+	"github.com/goharbor/harbor-scanner-clair/pkg/persistence/redis"
 	"github.com/goharbor/harbor-scanner-clair/pkg/registry"
-	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/scanner"
+	"github.com/goharbor/harbor-scanner-clair/pkg/work"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -28,55 +29,46 @@ func main() {
 	log.SetReportCaller(false)
 	log.SetFormatter(&log.JSONFormatter{})
 
+	config, err := etc.GetConfig()
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	store := redis.NewStore(config.Store)
+
+	workPool := work.New()
+
 	log.WithFields(log.Fields{
 		"version":  version,
 		"commit":   commit,
 		"built_at": date,
 	}).Info("Starting harbor-scanner-clair")
 
-	clairConfig, err := etc.GetClairConfig()
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	registryClientFactory := registry.NewClientFactory(config.TLS)
+	clairClient := clair.NewClient(config.TLS, config.Clair)
+	adapter := scanner.NewAdapter(registryClientFactory, clairClient, scanner.NewTransformer())
 
-	tlsConfig, err := etc.GetTLSConfig()
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	enqueuer := scanner.NewEnqueuer(workPool, adapter, store)
 
-	registryClientFactory := registry.NewClientFactory(tlsConfig)
-	clairClient := clair.NewClient(tlsConfig, clairConfig)
-	scanner := clair.NewScanner(registryClientFactory, clairClient, model.NewTransformer())
+	apiHandler := v1.NewAPIHandler(enqueuer, store)
 
-	apiConfig, err := etc.GetAPIConfig()
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
-
-	apiHandler := v1.NewAPIHandler(scanner)
-
-	server := api.NewServer(apiConfig, apiHandler)
+	apiServer := api.NewServer(config.API, apiHandler)
 
 	shutdownComplete := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 		captured := <-sigint
 		log.WithField("signal", captured.String()).Debug("Trapped os signal")
 
-		log.Debug("API server shutdown started")
-		if err := server.Shutdown(context.Background()); err != nil {
-			log.WithError(err).Error("Error while shutting down server")
-		}
-		log.Debug("API server shutdown completed")
+		apiServer.Shutdown(context.Background())
+		workPool.Shutdown()
+
 		close(shutdownComplete)
 	}()
 
-	go func() {
-		if err = server.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("Error: %v", err)
-		}
-		log.Debug("ListenAndServe returned")
-	}()
+	workPool.Start()
+	apiServer.ListenAndServe()
+
 	<-shutdownComplete
 }

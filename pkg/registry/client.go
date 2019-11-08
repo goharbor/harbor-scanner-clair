@@ -6,7 +6,7 @@ import (
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"io/ioutil"
 	"net/http"
 	"sync"

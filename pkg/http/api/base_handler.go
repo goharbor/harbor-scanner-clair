@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"

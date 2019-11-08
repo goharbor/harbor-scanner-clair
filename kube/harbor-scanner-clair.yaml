@@ -8,7 +8,8 @@ spec:
     app: harbor-scanner-clair
   type: LoadBalancer
   ports:
-    - protocol: TCP
+    - name: api-server
+      protocol: TCP
       port: 8443
       targetPort: 8443
 ---
@@ -45,17 +46,23 @@ spec:
               value: "15s"
             - name: "SCANNER_CLAIR_URL"
               value: "http://harbor-harbor-clair:6060"
+            - name: "SCANNER_STORE_REDIS_URL"
+              value: "redis://harbor-harbor-redis:6379"
+            - name: "SCANNER_STORE_REDIS_NAMESPACE"
+              value: "harbor.scanner.clair:store"
+            - name: "SCANNER_STORE_REDIS_SCAN_JOB_TTL"
+              value: "1h"
             - name: "SCANNER_TLS_INSECURE_SKIP_VERIFY"
               value: "false"
             - name: "SCANNER_TLS_CLIENTCAS"
               value: ""
           ports:
-            - name: api-server-port
+            - name: api-server
               containerPort: 8443
           livenessProbe:
             httpGet:
               scheme: HTTPS
-              port: api-server-port
+              port: api-server
               path: /probe/healthy
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -63,7 +70,7 @@ spec:
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              port: api-server-port
+              port: api-server
               path: /probe/ready
             initialDelaySeconds: 5
             periodSeconds: 10

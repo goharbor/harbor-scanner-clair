@@ -19,5 +19,8 @@ lint:
 test: $(SOURCES)
 	GO111MODULE=on go test -v -short -race -timeout 30s -coverprofile=coverage.txt -covermode=atomic ./...
 
+test-integration: build
+	GO111MODULE=on go test -v -tags=integration ./test/integration/...
+
 container: build
 	docker build --no-cache -t $(IMAGE) .

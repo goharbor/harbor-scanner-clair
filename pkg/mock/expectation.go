@@ -18,11 +18,6 @@ func ApplyExpectations(t *testing.T, mock interface{}, expectations ...*Expectat
 		return
 	}
 	switch v := mock.(type) {
-	case *Scanner:
-		m := mock.(*Scanner)
-		for _, e := range expectations {
-			m.On(e.Method, e.Args...).Return(e.ReturnArgs...)
-		}
 	case *ClairClient:
 		m := mock.(*ClairClient)
 		for _, e := range expectations {
@@ -30,6 +25,16 @@ func ApplyExpectations(t *testing.T, mock interface{}, expectations ...*Expectat
 		}
 	case *Transformer:
 		m := mock.(*Transformer)
+		for _, e := range expectations {
+			m.On(e.Method, e.Args...).Return(e.ReturnArgs...)
+		}
+	case *Enqueuer:
+		m := mock.(*Enqueuer)
+		for _, e := range expectations {
+			m.On(e.Method, e.Args...).Return(e.ReturnArgs...)
+		}
+	case *Store:
+		m := mock.(*Store)
 		for _, e := range expectations {
 			m.On(e.Method, e.Args...).Return(e.ReturnArgs...)
 		}

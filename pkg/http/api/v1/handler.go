@@ -3,15 +3,17 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
+	"github.com/goharbor/harbor-scanner-clair/pkg/job"
+	"github.com/goharbor/harbor-scanner-clair/pkg/persistence"
+	"github.com/goharbor/harbor-scanner-clair/pkg/scanner"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
-
-	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
-	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
-	"github.com/goharbor/harbor-scanner-clair/pkg/scanner/clair"
-	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -19,13 +21,15 @@ const (
 )
 
 type requestHandler struct {
-	scanner clair.Scanner
+	enqueuer scanner.Enqueuer
+	store    persistence.Store
 	api.BaseHandler
 }
 
-func NewAPIHandler(scanner clair.Scanner) http.Handler {
+func NewAPIHandler(enqueuer scanner.Enqueuer, store persistence.Store) http.Handler {
 	handler := &requestHandler{
-		scanner: scanner,
+		enqueuer: enqueuer,
+		store:    store,
 	}
 	router := mux.NewRouter()
 	router.Use(handler.logRequest)
@@ -39,6 +43,8 @@ func NewAPIHandler(scanner clair.Scanner) http.Handler {
 	probeRouter := router.PathPrefix("/probe").Subrouter()
 	probeRouter.Methods(http.MethodGet).Path("/healthy").HandlerFunc(handler.GetHealthy)
 	probeRouter.Methods(http.MethodGet).Path("/ready").HandlerFunc(handler.GetReady)
+
+	router.Methods(http.MethodGet).Path("/metrics").Handler(promhttp.Handler())
 	return router
 }
 
@@ -67,7 +73,7 @@ func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Re
 		return
 	}
 
-	scanResponse, err := h.scanner.Scan(scanRequest)
+	jobID, err := h.enqueuer.Enqueue(scanRequest)
 	if err != nil {
 		log.WithError(err).Error("Error while performing scan")
 		h.WriteJSONError(res, harbor.Error{
@@ -77,7 +83,7 @@ func (h *requestHandler) AcceptScanRequest(res http.ResponseWriter, req *http.Re
 		return
 	}
 
-	h.WriteJSON(res, scanResponse, api.MimeTypeScanResponse, http.StatusAccepted)
+	h.WriteJSON(res, harbor.ScanResponse{ID: jobID}, api.MimeTypeScanResponse, http.StatusAccepted)
 }
 
 func (h *requestHandler) validate(req harbor.ScanRequest) *harbor.Error {
@@ -115,7 +121,7 @@ func (h *requestHandler) validate(req harbor.ScanRequest) *harbor.Error {
 
 func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	scanRequestID, ok := vars[pathVarScanRequestID]
+	jobID, ok := vars[pathVarScanRequestID]
 	if !ok {
 		log.Error("Error while parsing `scan_request_id` path variable")
 		h.WriteJSONError(res, harbor.Error{
@@ -125,15 +131,52 @@ func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	scanReport, err := h.scanner.GetReport(scanRequestID)
+	reqLog := log.WithField("scan_job_id", jobID)
+
+	scanJob, err := h.store.Get(jobID)
 	if err != nil {
 		h.WriteJSONError(res, harbor.Error{
 			HTTPCode: http.StatusInternalServerError,
-			Message:  fmt.Sprintf("getting scan report: %v", err),
+			Message:  fmt.Sprintf("getting scan job: %v", err),
 		})
 		return
 	}
-	h.WriteJSON(res, scanReport, api.MimeTypeScanReport, http.StatusOK)
+
+	if scanJob == nil {
+		reqLog.Error("Cannot find scan job")
+		h.WriteJSONError(res, harbor.Error{
+			HTTPCode: http.StatusNotFound,
+			Message:  fmt.Sprintf("cannot find scan job: %v", jobID),
+		})
+		return
+	}
+
+	if scanJob.Status == job.Pending || scanJob.Status == job.Running {
+		reqLog.WithField("scan_job_status", scanJob.Status.String()).Debug("Scan job has not finished yet")
+		res.Header().Add("Location", req.URL.String())
+		res.WriteHeader(http.StatusFound)
+		return
+	}
+
+	if scanJob.Status == job.Failed {
+		reqLog.WithField(log.ErrorKey, scanJob.Error).Error("Scan job failed")
+		h.WriteJSONError(res, harbor.Error{
+			HTTPCode: http.StatusInternalServerError,
+			Message:  scanJob.Error,
+		})
+		return
+	}
+
+	if scanJob.Status != job.Finished {
+		reqLog.WithField("scan_job_status", scanJob.Status).Error("Unexpected scan job status")
+		h.WriteJSONError(res, harbor.Error{
+			HTTPCode: http.StatusInternalServerError,
+			Message:  fmt.Sprintf("unexpected status %v of scan job %v", scanJob.Status, scanJob.ID),
+		})
+		return
+	}
+
+	h.WriteJSON(res, scanJob.Report, api.MimeTypeScanReport, http.StatusOK)
 }
 
 func (h *requestHandler) GetMetadata(res http.ResponseWriter, req *http.Request) {

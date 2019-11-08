@@ -1,9 +1,13 @@
-package model
+package scanner
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"github.com/docker/distribution"
+	"github.com/docker/distribution/manifest/schema2"
+	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/clair"
-	"github.com/goharbor/harbor-scanner-clair/pkg/model/harbor"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -17,7 +21,8 @@ func (c *systemClock) Now() time.Time {
 }
 
 type Transformer interface {
-	Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport
+	ToClairLayers(req harbor.ScanRequest, manifest distribution.Manifest) []clair.Layer
+	ToHarborScanReport(artifact harbor.Artifact, layer *clair.Layer) harbor.ScanReport
 }
 
 type transformer struct {
@@ -32,7 +37,39 @@ func NewTransformer() *transformer {
 	}
 }
 
-func (t *transformer) Transform(artifact harbor.Artifact, source clair.LayerEnvelope) harbor.ScanReport {
+func (t *transformer) ToClairLayers(req harbor.ScanRequest, manifest distribution.Manifest) []clair.Layer {
+	layers := make([]clair.Layer, 0)
+
+	// Form the chain by using the digests of all parent layers in the image, such that if another image is built
+	// on top of this image the layer name can be re-used.
+	shaChain := ""
+	for _, d := range manifest.References() {
+		if d.MediaType == schema2.MediaTypeImageConfig {
+			continue
+		}
+		shaChain += string(d.Digest) + "-"
+		l := clair.Layer{
+			Name: fmt.Sprintf("%x", sha256.Sum256([]byte(shaChain))),
+			Headers: map[string]string{
+				"Connection":    "close",
+				"Authorization": req.Registry.Authorization,
+			},
+			Format: "Docker",
+			Path:   t.buildBlobURL(req.Registry.URL, req.Artifact.Repository, string(d.Digest)),
+		}
+		if len(layers) > 0 {
+			l.ParentName = layers[len(layers)-1].Name
+		}
+		layers = append(layers, l)
+	}
+	return layers
+}
+
+func (t *transformer) buildBlobURL(endpoint, repository, digest string) string {
+	return fmt.Sprintf("%s/v2/%s/blobs/%s", endpoint, repository, digest)
+}
+
+func (t *transformer) ToHarborScanReport(artifact harbor.Artifact, source *clair.Layer) harbor.ScanReport {
 	return harbor.ScanReport{
 		GeneratedAt:     t.clock.Now(),
 		Scanner:         etc.GetScannerMetadata(),
@@ -43,11 +80,10 @@ func (t *transformer) Transform(artifact harbor.Artifact, source clair.LayerEnve
 }
 
 // TransformVuln is for running scanning job in both job service V1 and V2.
-func (t *transformer) toComponentsOverview(envelope clair.LayerEnvelope) harbor.Severity {
+func (t *transformer) toComponentsOverview(layer *clair.Layer) harbor.Severity {
 	vulnMap := make(map[harbor.Severity]int)
-	features := envelope.Layer.Features
 	var temp harbor.Severity
-	for _, f := range features {
+	for _, f := range layer.Features {
 		sev := harbor.SevNone
 		for _, v := range f.Vulnerabilities {
 			temp = t.toHarborSeverity(v.Severity)
@@ -68,9 +104,8 @@ func (t *transformer) toComponentsOverview(envelope clair.LayerEnvelope) harbor.
 }
 
 // transformVulnerabilities transforms the returned value of Clair API to a list of VulnerabilityItem
-func (t *transformer) toVulnerabilityItems(envelope clair.LayerEnvelope) []harbor.VulnerabilityItem {
+func (t *transformer) toVulnerabilityItems(l *clair.Layer) []harbor.VulnerabilityItem {
 	var res []harbor.VulnerabilityItem
-	l := envelope.Layer
 	if l == nil {
 		return res
 	}
