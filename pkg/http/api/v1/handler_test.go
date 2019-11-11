@@ -3,21 +3,22 @@ package v1
 import (
 	"errors"
 	"fmt"
-	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
-	"github.com/goharbor/harbor-scanner-clair/pkg/job"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
+	"github.com/goharbor/harbor-scanner-clair/pkg/job"
 	"github.com/goharbor/harbor-scanner-clair/pkg/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRequestHandler_GetHealthy(t *testing.T) {
+	clair := mock.NewClairClient()
 	enqueuer := mock.NewEnqueuer()
 	store := mock.NewStore()
 
@@ -26,7 +27,7 @@ func TestRequestHandler_GetHealthy(t *testing.T) {
 	r, err := http.NewRequest(http.MethodGet, "/probe/healthy", nil)
 	require.NoError(t, err)
 
-	NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
+	NewAPIHandler(clair, enqueuer, store).ServeHTTP(rr, r)
 
 	rs := rr.Result()
 
@@ -36,6 +37,7 @@ func TestRequestHandler_GetHealthy(t *testing.T) {
 }
 
 func TestRequestHandler_GetReady(t *testing.T) {
+	clair := mock.NewClairClient()
 	enqueuer := mock.NewEnqueuer()
 	store := mock.NewStore()
 
@@ -44,7 +46,7 @@ func TestRequestHandler_GetReady(t *testing.T) {
 	r, err := http.NewRequest(http.MethodGet, "/probe/ready", nil)
 	require.NoError(t, err)
 
-	NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
+	NewAPIHandler(clair, enqueuer, store).ServeHTTP(rr, r)
 
 	rs := rr.Result()
 
@@ -146,6 +148,7 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			clair := mock.NewClairClient()
 			enqueuer := mock.NewEnqueuer()
 			store := mock.NewStore()
 
@@ -155,7 +158,7 @@ func TestRequestHandler_AcceptScanRequest(t *testing.T) {
 			r, err := http.NewRequest(http.MethodPost, "/api/v1/scan", strings.NewReader(tc.requestBody))
 			require.NoError(t, err)
 
-			NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
+			NewAPIHandler(clair, enqueuer, store).ServeHTTP(rr, r)
 
 			assert.Equal(t, tc.expectedStatus, rr.Code)
 			assert.Equal(t, tc.expectedContentType, rr.Header().Get("Content-Type"))
@@ -338,6 +341,7 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			clair := mock.NewClairClient()
 			enqueuer := mock.NewEnqueuer()
 			store := mock.NewStore()
 
@@ -347,7 +351,7 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 			r, err := http.NewRequest(http.MethodGet, "/api/v1/scan/job:123/report", nil)
 			require.NoError(t, err)
 
-			NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
+			NewAPIHandler(clair, enqueuer, store).ServeHTTP(rr, r)
 
 			assert.Equal(t, tc.expectedStatus, rr.Code)
 			assert.Equal(t, tc.expectedContentType, rr.Header().Get("Content-Type"))
@@ -362,15 +366,27 @@ func TestRequestHandler_GetScanReport(t *testing.T) {
 }
 
 func TestRequestHandler_GetMetadata(t *testing.T) {
+	clair := mock.NewClairClient()
 	enqueuer := mock.NewEnqueuer()
 	store := mock.NewStore()
+
+	str := "2014-11-12T11:45:26Z"
+	updateAt, _ := time.Parse(time.RFC3339, str)
+
+	clairExpectation := &mock.Expectation{
+		Method:     "GetVulnerabilityDatabaseUpdatedAt",
+		Args:       []interface{}{},
+		ReturnArgs: []interface{}{&updateAt, nil},
+	}
+
+	mock.ApplyExpectations(t, clair, clairExpectation)
 
 	rr := httptest.NewRecorder()
 
 	r, err := http.NewRequest(http.MethodGet, "/api/v1/metadata", nil)
 	require.NoError(t, err)
 
-	NewAPIHandler(enqueuer, store).ServeHTTP(rr, r)
+	NewAPIHandler(clair, enqueuer, store).ServeHTTP(rr, r)
 
 	rs := rr.Result()
 
@@ -393,6 +409,7 @@ func TestRequestHandler_GetMetadata(t *testing.T) {
     }
   ],
   "properties": {
+	"harbor.scanner-adapter/vulnerability-database-updated-at": "2014-11-12T11:45:26Z",
     "harbor.scanner-adapter/scanner-type": "os-package-vulnerability",
     "harbor.scanner-adapter/registry-authorization-type": "Bearer"
   }
