@@ -3,14 +3,16 @@ package etc
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/caarlos0/env/v6"
-	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/caarlos0/env/v6"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"github.com/xo/dburl"
 )
 
 type Config struct {
@@ -41,7 +43,8 @@ type TLSConfig struct {
 }
 
 type ClairConfig struct {
-	URL string `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
+	URL         string `env:"SCANNER_CLAIR_URL" envDefault:"http://harbor-harbor-clair:6060"`
+	DatabaseURL string `env:"SCANNER_CLAIR_DATABASE_URL"`
 }
 
 type Store struct {
@@ -88,6 +91,13 @@ func GetConfig() (cfg Config, err error) {
 			return cfg, fmt.Errorf("failed to append %q to root CAs pool: %v", certFile, err)
 		}
 		log.WithField("cert", certFile).Debug("Client CA appended to root CAs pool")
+	}
+
+	if cfg.Clair.DatabaseURL != "" {
+		_, err = dburl.Parse(cfg.Clair.DatabaseURL)
+		if err != nil {
+			return cfg, fmt.Errorf("invalid clair database url %s", cfg.Clair.DatabaseURL)
+		}
 	}
 
 	return

@@ -2,18 +2,19 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
-	"github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
+	v1 "github.com/goharbor/harbor-scanner-clair/pkg/http/api/v1"
 	"github.com/goharbor/harbor-scanner-clair/pkg/persistence/redis"
 	"github.com/goharbor/harbor-scanner-clair/pkg/registry"
 	"github.com/goharbor/harbor-scanner-clair/pkg/scanner"
 	"github.com/goharbor/harbor-scanner-clair/pkg/work"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var (
@@ -45,12 +46,17 @@ func main() {
 	}).Info("Starting harbor-scanner-clair")
 
 	registryClientFactory := registry.NewClientFactory(config.TLS)
-	clairClient := clair.NewClient(config.TLS, config.Clair)
+
+	clairClient, err := clair.NewClient(config.TLS, config.Clair)
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
 	adapter := scanner.NewAdapter(registryClientFactory, clairClient, scanner.NewTransformer())
 
 	enqueuer := scanner.NewEnqueuer(workPool, adapter, store)
 
-	apiHandler := v1.NewAPIHandler(enqueuer, store)
+	apiHandler := v1.NewAPIHandler(clairClient, enqueuer, store)
 
 	apiServer := api.NewServer(config.API, apiHandler)
 

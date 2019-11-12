@@ -33,6 +33,7 @@ Configuration of the adapter is done via environment variables at startup.
 | `SCANNER_API_SERVER_WRITE_TIMEOUT` | `15s` | The maximum duration before timing out writes of the response. |
 | `SCANNER_API_SERVER_IDLE_TIMEOUT`  | `60s` | The maximum amount of time to wait for the next request when keep-alives are enabled. |
 | `SCANNER_CLAIR_URL`                | `http://harbor-harbor-clair:6060` | Clair URL |
+| `SCANNER_CLAIR_DATABASE_URL`       | | The Clair database URL, it is used to fetch vulnerability database updated time of the Clair. Its format is `postgresql://user:password@host/db?sslmode=disable` |
 | `SCANNER_STORE_REDIS_URL`       | `redis://harbor-harbor-redis:6379` | Redis server URI for a redis store. |
 | `SCANNER_STORE_REDIS_NAMESPACE` | `harbor.scanner.clair:store` | A namespace for keys in a redis store. |
 | `SCANNER_STORE_REDIS_POOL_MAX_ACTIVE` | `5`  | The max number of connections allocated by the pool for a redis store. |

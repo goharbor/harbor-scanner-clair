@@ -3,6 +3,11 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/http/api"
@@ -12,8 +17,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 )
 
 const (
@@ -21,13 +24,15 @@ const (
 )
 
 type requestHandler struct {
+	clair    clair.Client
 	enqueuer scanner.Enqueuer
 	store    persistence.Store
 	api.BaseHandler
 }
 
-func NewAPIHandler(enqueuer scanner.Enqueuer, store persistence.Store) http.Handler {
+func NewAPIHandler(clair clair.Client, enqueuer scanner.Enqueuer, store persistence.Store) http.Handler {
 	handler := &requestHandler{
+		clair:    clair,
 		enqueuer: enqueuer,
 		store:    store,
 	}
@@ -180,6 +185,18 @@ func (h *requestHandler) GetScanReport(res http.ResponseWriter, req *http.Reques
 }
 
 func (h *requestHandler) GetMetadata(res http.ResponseWriter, req *http.Request) {
+	properties := map[string]string{
+		"harbor.scanner-adapter/scanner-type":                "os-package-vulnerability",
+		"harbor.scanner-adapter/registry-authorization-type": "Bearer",
+	}
+
+	updatedAt, err := h.clair.GetVulnerabilityDatabaseUpdatedAt()
+	if err != nil {
+		log.Errorf("Failed to get vulnerability database updated time, %v", err)
+	} else if updatedAt != nil {
+		properties["harbor.scanner-adapter/vulnerability-database-updated-at"] = updatedAt.Format(time.RFC3339)
+	}
+
 	metadata := &harbor.ScannerMetadata{
 		Scanner: etc.GetScannerMetadata(),
 		Capabilities: []harbor.Capability{
@@ -193,10 +210,7 @@ func (h *requestHandler) GetMetadata(res http.ResponseWriter, req *http.Request)
 				},
 			},
 		},
-		Properties: map[string]string{
-			"harbor.scanner-adapter/scanner-type":                "os-package-vulnerability",
-			"harbor.scanner-adapter/registry-authorization-type": "Bearer",
-		},
+		Properties: properties,
 	}
 
 	h.WriteJSON(res, metadata, api.MimeTypeMetadata, http.StatusOK)
