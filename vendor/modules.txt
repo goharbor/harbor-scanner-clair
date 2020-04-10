@@ -21,6 +21,8 @@ github.com/davecgh/go-spew/spew
 github.com/docker/distribution
 github.com/docker/distribution/digestset
 github.com/docker/distribution/manifest
+github.com/docker/distribution/manifest/ocischema
+github.com/docker/distribution/manifest/schema1
 github.com/docker/distribution/manifest/schema2
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/api/errcode
@@ -57,6 +59,8 @@ github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.3.3
 github.com/docker/go-units
+# github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
+github.com/docker/libtrust
 # github.com/gogo/protobuf v1.2.0
 github.com/gogo/protobuf/proto
 # github.com/golang/protobuf v1.3.2

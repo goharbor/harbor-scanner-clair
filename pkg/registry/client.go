@@ -3,13 +3,19 @@ package registry
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/docker/distribution"
-	"github.com/docker/distribution/manifest/schema2"
-	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
-	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"io/ioutil"
 	"net/http"
 	"sync"
+
+	"github.com/docker/distribution"
+	// docker schema1 manifest
+	_ "github.com/docker/distribution/manifest/schema1"
+	// docker schema2 manifest
+	_ "github.com/docker/distribution/manifest/schema2"
+	// oci schema
+	_ "github.com/docker/distribution/manifest/ocischema"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 )
 
 var (
@@ -60,7 +66,7 @@ func (c *client) GetManifest(sr harbor.ScanRequest) (distribution.Manifest, erro
 		return nil, err
 	}
 
-	req.Header.Add("Accept", schema2.MediaTypeManifest)
+	req.Header.Add("Accept", sr.Artifact.MimeType)
 	req.Header.Add("Authorization", sr.Registry.Authorization)
 
 	resp, err := c.client.Do(req)
@@ -78,7 +84,7 @@ func (c *client) GetManifest(sr harbor.ScanRequest) (distribution.Manifest, erro
 		return nil, fmt.Errorf("fetching manifest with status %q: %s", resp.Status, string(b))
 	}
 
-	manifest, _, err := distribution.UnmarshalManifest(schema2.MediaTypeManifest, b)
+	manifest, _, err := distribution.UnmarshalManifest(sr.Artifact.MimeType, b)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshaling manifest: %v", err)
 	}
