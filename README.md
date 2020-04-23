@@ -34,11 +34,15 @@ Configuration of the adapter is done via environment variables at startup.
 | `SCANNER_API_SERVER_IDLE_TIMEOUT`  | `60s` | The maximum amount of time to wait for the next request when keep-alives are enabled. |
 | `SCANNER_CLAIR_URL`                | `http://harbor-harbor-clair:6060` | Clair URL |
 | `SCANNER_CLAIR_DATABASE_URL`       | | The Clair database URL, it is used to fetch vulnerability database updated time of the Clair. Its format is `postgresql://user:password@host/db?sslmode=disable` |
-| `SCANNER_STORE_REDIS_URL`       | `redis://harbor-harbor-redis:6379` | Redis server URI for a redis store. |
-| `SCANNER_STORE_REDIS_NAMESPACE` | `harbor.scanner.clair:store` | A namespace for keys in a redis store. |
-| `SCANNER_STORE_REDIS_POOL_MAX_ACTIVE` | `5`  | The max number of connections allocated by the pool for a redis store. |
-| `SCANNER_STORE_REDIS_POOL_MAX_IDLE`   | `5`  | The max number of idle connections in the pool for a redis store. |
-| `SCANNER_STORE_REDIS_SCAN_JOB_TTL`    | `1h` | The time to live for persisting scan jobs and associated scan reports. |
+| `SCANNER_STORE_REDIS_URL`                     | `redis://harbor-harbor-redis:6379` | Redis server URI for a Redis store. The URI supports schemas to connect to a standalone Redis server, i.e. `redis://user:password@standalone_host:port/db-number` and Redis Sentinel deployment, i.e. `redis+sentinel://user:password@sentinel_host1:port1,sentinel_host2:port2/monitor-name/db-number`. |
+| `SCANNER_STORE_REDIS_POOL_MAX_ACTIVE`         | `5`   | The max number of connections allocated by the pool for a Redis store. |
+| `SCANNER_STORE_REDIS_POOL_MAX_IDLE`           | `5`   | The max number of idle connections in the pool for a Redis store. |
+| `SCANNER_STORE_REDIS_POOL_IDLE_TIMEOUT`       | `5m`  | Close connections after remaining idle for this duration. |
+| `SCANNER_STORE_REDIS_POOL_CONNECTION_TIMEOUT` | `1s`  | The timeout for connecting to the Redis server. |
+| `SCANNER_STORE_REDIS_POOL_READ_TIMEOUT`       | `1s`  | The timeout for reading a single Redis command reply. |
+| `SCANNER_STORE_REDIS_POOL_WRITE_TIMEOUT`      | `1s`  | The timeout for writing a single Redis command. |
+| `SCANNER_STORE_REDIS_NAMESPACE`       | `harbor.scanner.clair:store` | A namespace for keys in a redis store. |
+| `SCANNER_STORE_REDIS_SCAN_JOB_TTL`    | `1h`                         | The time to live for persisting scan jobs and associated scan reports. |
 
 ## Deploy to minikube
 
