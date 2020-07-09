@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/job"
@@ -13,21 +14,14 @@ import (
 )
 
 type store struct {
-	cfg  etc.Store
-	pool redis.Pool
+	pool *redis.Pool
+	cfg  etc.RedisStore
 }
 
-func NewStore(cfg etc.Store) persistence.Store {
+func NewStore(pool *redis.Pool, cfg etc.RedisStore) persistence.Store {
 	return &store{
-		cfg: cfg,
-		pool: redis.Pool{
-			Dial: func() (redis.Conn, error) {
-				return redis.DialURL(cfg.RedisURL)
-			},
-			MaxIdle:   cfg.PoolMaxIdle,
-			MaxActive: cfg.PoolMaxActive,
-			Wait:      true,
-		},
+		cfg:  cfg,
+		pool: pool,
 	}
 }
 

@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/goharbor/harbor-scanner-clair/pkg/redisx"
 
 	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
@@ -30,12 +33,25 @@ func main() {
 	log.SetReportCaller(false)
 	log.SetFormatter(&log.JSONFormatter{})
 
-	config, err := etc.GetConfig()
-	if err != nil {
+	if err := run(); err != nil {
 		log.Fatalf("Error: %v", err)
 	}
+}
 
-	store := redis.NewStore(config.Store)
+func run() (err error) {
+	config, err := etc.GetConfig()
+	if err != nil {
+		err = fmt.Errorf("getting config: %v", err)
+		return
+	}
+
+	pool, err := redisx.NewPool(config.RedisPool)
+	if err != nil {
+		err = fmt.Errorf("constructing connection pool: %v", err)
+		return
+	}
+
+	store := redis.NewStore(pool, config.RedisStore)
 
 	workPool := work.New()
 
@@ -49,7 +65,8 @@ func main() {
 
 	clairClient, err := clair.NewClient(config.TLS, config.Clair)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		err = fmt.Errorf("constructing clair client: %v", clairClient)
+		return
 	}
 
 	adapter := scanner.NewAdapter(registryClientFactory, clairClient, scanner.NewTransformer())
@@ -69,6 +86,7 @@ func main() {
 
 		apiServer.Shutdown(context.Background())
 		workPool.Shutdown()
+		_ = pool.Close()
 
 		close(shutdownComplete)
 	}()
@@ -77,4 +95,5 @@ func main() {
 	apiServer.ListenAndServe()
 
 	<-shutdownComplete
+	return
 }

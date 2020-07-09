@@ -3,6 +3,7 @@ module github.com/goharbor/harbor-scanner-clair
 go 1.13
 
 require (
+	github.com/FZambia/sentinel v1.1.0
 	github.com/Microsoft/hcsshim v0.8.6 // indirect
 	github.com/caarlos0/env/v6 v6.0.0
 	github.com/docker/distribution v2.7.1+incompatible

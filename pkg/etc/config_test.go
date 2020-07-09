@@ -1,12 +1,13 @@
 package etc
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type Envs map[string]string
@@ -66,12 +67,18 @@ func TestGetConfig(t *testing.T) {
 				Clair: ClairConfig{
 					URL: "http://harbor-harbor-clair:6060",
 				},
-				Store: Store{
-					RedisURL:      "redis://harbor-harbor-redis:6379",
-					Namespace:     "harbor.scanner.clair:store",
-					PoolMaxActive: 5,
-					PoolMaxIdle:   5,
-					ScanJobTTL:    parseDuration(t, "1h"),
+				RedisStore: RedisStore{
+					Namespace:  "harbor.scanner.clair:store",
+					ScanJobTTL: parseDuration(t, "1h"),
+				},
+				RedisPool: RedisPool{
+					URL:               "redis://harbor-harbor-redis:6379",
+					MaxActive:         5,
+					MaxIdle:           5,
+					IdleTimeout:       parseDuration(t, "5m"),
+					ConnectionTimeout: parseDuration(t, "1s"),
+					ReadTimeout:       parseDuration(t, "1s"),
+					WriteTimeout:      parseDuration(t, "1s"),
 				},
 			},
 		},
@@ -89,6 +96,9 @@ func TestGetConfig(t *testing.T) {
 				"SCANNER_TLS_CLIENTCAS":            "test/data/ca.crt",
 
 				"SCANNER_CLAIR_URL": "https://demo.clair:7080",
+
+				"SCANNER_STORE_REDIS_POOL_MAX_ACTIVE": "3",
+				"SCANNER_STORE_REDIS_POOL_MAX_IDLE":   "10",
 			},
 			expectedConfig: Config{
 				API: APIConfig{
@@ -105,12 +115,18 @@ func TestGetConfig(t *testing.T) {
 				Clair: ClairConfig{
 					URL: "https://demo.clair:7080",
 				},
-				Store: Store{
-					RedisURL:      "redis://harbor-harbor-redis:6379",
-					Namespace:     "harbor.scanner.clair:store",
-					PoolMaxActive: 5,
-					PoolMaxIdle:   5,
-					ScanJobTTL:    parseDuration(t, "1h"),
+				RedisStore: RedisStore{
+					Namespace:  "harbor.scanner.clair:store",
+					ScanJobTTL: parseDuration(t, "1h"),
+				},
+				RedisPool: RedisPool{
+					URL:               "redis://harbor-harbor-redis:6379",
+					MaxActive:         3,
+					MaxIdle:           10,
+					IdleTimeout:       parseDuration(t, "5m"),
+					ConnectionTimeout: parseDuration(t, "1s"),
+					ReadTimeout:       parseDuration(t, "1s"),
+					WriteTimeout:      parseDuration(t, "1s"),
 				},
 			},
 		},
@@ -124,7 +140,8 @@ func TestGetConfig(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedConfig.API, cfg.API)
 			assert.Equal(t, tc.expectedConfig.Clair, cfg.Clair)
-			assert.Equal(t, tc.expectedConfig.Store, cfg.Store)
+			assert.Equal(t, tc.expectedConfig.RedisStore, cfg.RedisStore)
+			assert.Equal(t, tc.expectedConfig.RedisPool, cfg.RedisPool)
 		})
 	}
 
