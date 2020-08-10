@@ -5,6 +5,10 @@ package redis
 import (
 	"context"
 	"fmt"
+	"github.com/goharbor/harbor-scanner-clair/pkg/redisx"
+	"testing"
+	"time"
+
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/job"
@@ -13,8 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 	tc "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"testing"
-	"time"
 )
 
 // TestRedisStore is an integration test for the Redis persistence store.
@@ -39,12 +41,16 @@ func TestStore(t *testing.T) {
 
 	redisURL := getRedisURL(t, ctx, redisC)
 
-	dataStore := redis.NewStore(etc.Store{
-		RedisURL:      redisURL,
-		Namespace:     "harbor.scanner.clair:store",
-		PoolMaxActive: 5,
-		PoolMaxIdle:   5,
-		ScanJobTTL:    parseDuration(t, "10s"),
+	pool, err := redisx.NewPool(etc.RedisPool{
+		URL:       redisURL,
+		MaxActive: 5,
+		MaxIdle:   5,
+	})
+	require.NoError(t, err, "getting redis pool should not fail")
+
+	dataStore := redis.NewStore(pool, etc.RedisStore{
+		Namespace:  "harbor.scanner.clair:store",
+		ScanJobTTL: parseDuration(t, "10s"),
 	})
 
 	t.Run("CRUD", func(t *testing.T) {

@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
+
 	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type Server struct {
@@ -43,6 +45,24 @@ func (s *Server) listenAndServe() error {
 		}).Debug("Starting API server with TLS")
 		return s.server.ListenAndServeTLS(s.config.TLSCertificate, s.config.TLSKey)
 	}
+
+	s.server.TLSConfig = &tls.Config{
+		PreferServerCipherSuites: true,
+		CurvePreferences: []tls.CurveID{
+			tls.CurveP256,
+			tls.X25519,
+		},
+		MinVersion: tls.VersionTLS12,
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		},
+	}
+
 	log.WithField("addr", s.config.Addr).Warn("Starting API server without TLS")
 	return s.server.ListenAndServe()
 }

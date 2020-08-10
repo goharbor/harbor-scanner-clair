@@ -1,3 +1,5 @@
+# github.com/FZambia/sentinel v1.1.0
+github.com/FZambia/sentinel
 # github.com/Microsoft/go-winio v0.4.11
 github.com/Microsoft/go-winio
 # github.com/Microsoft/hcsshim v0.8.6
