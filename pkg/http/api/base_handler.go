@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+
+	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -15,6 +16,8 @@ const (
 
 var MimeTypeOCIImageManifest = MimeType{Type: "application", Subtype: "vnd.oci.image.manifest.v1+json"}
 var MimeTypeDockerDistributionManifest = MimeType{Type: "application", Subtype: "vnd.docker.distribution.manifest.v2+json"}
+var MimeTypeDockerDistributionManifestSchema1 = MimeType{Type: "application", Subtype: "vnd.docker.distribution.manifest.v1+json"}
+var MimeTypeDockerDistributionManifestSchema1Signed = MimeType{Type: "application", Subtype: "vnd.docker.distribution.manifest.v1+prettyjws"}
 
 var MimeTypeVersion = map[string]string{"version": "1.0"}
 var MimeTypeError = MimeType{Type: "application", Subtype: "vnd.scanner.adapter.error", Params: MimeTypeVersion}

@@ -204,6 +204,8 @@ func (h *requestHandler) GetMetadata(res http.ResponseWriter, req *http.Request)
 				ConsumesMimeTypes: []string{
 					api.MimeTypeOCIImageManifest.String(),
 					api.MimeTypeDockerDistributionManifest.String(),
+					api.MimeTypeDockerDistributionManifestSchema1.String(),
+					api.MimeTypeDockerDistributionManifestSchema1Signed.String(),
 				},
 				ProducesMimeTypes: []string{
 					api.MimeTypeScanReport.String(),

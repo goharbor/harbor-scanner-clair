@@ -401,7 +401,9 @@ func TestRequestHandler_GetMetadata(t *testing.T) {
     {
       "consumes_mime_types": [
         "application/vnd.oci.image.manifest.v1+json",
-        "application/vnd.docker.distribution.manifest.v2+json"
+        "application/vnd.docker.distribution.manifest.v2+json",
+        "application/vnd.docker.distribution.manifest.v1+json",
+        "application/vnd.docker.distribution.manifest.v1+prettyjws"
       ],
       "produces_mime_types": [
         "application/vnd.scanner.adapter.vuln.report.harbor+json; version=1.0"
