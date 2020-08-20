@@ -1,6 +1,6 @@
 language: go
 go:
-- '1.13'
+- '1.14.7'
 git:
   depth: 1
 services:
