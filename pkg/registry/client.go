@@ -47,6 +47,7 @@ func (cf *clientFactory) Get() Client {
 					RootCAs:            cf.tlsConfig.RootCAs,
 					InsecureSkipVerify: cf.tlsConfig.InsecureSkipVerify,
 				},
+                                Proxy: http.ProxyFromEnvironment,
 			}},
 		}
 	})
