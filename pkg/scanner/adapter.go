@@ -2,10 +2,14 @@ package scanner
 
 import (
 	"fmt"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/goharbor/harbor-scanner-clair/pkg/clair"
+	"github.com/goharbor/harbor-scanner-clair/pkg/etc"
 	"github.com/goharbor/harbor-scanner-clair/pkg/harbor"
 	"github.com/goharbor/harbor-scanner-clair/pkg/registry"
-	log "github.com/sirupsen/logrus"
 )
 
 // Adapter wraps the Scan method.
@@ -33,6 +37,16 @@ func (s *adapter) Scan(req harbor.ScanRequest) (harbor.ScanReport, error) {
 	layers, err := s.prepareLayers(req)
 	if err != nil {
 		return harbor.ScanReport{}, fmt.Errorf("preparing layers: %v", err)
+	}
+
+	if len(layers) == 0 {
+		return harbor.ScanReport{
+			GeneratedAt:     time.Now(),
+			Scanner:         etc.GetScannerMetadata(),
+			Artifact:        req.Artifact,
+			Severity:        harbor.SevUnknown,
+			Vulnerabilities: []harbor.VulnerabilityItem{},
+		}, nil
 	}
 
 	for _, l := range layers {
