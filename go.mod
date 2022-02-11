@@ -6,7 +6,7 @@ require (
 	github.com/FZambia/sentinel v1.1.0
 	github.com/Microsoft/hcsshim v0.8.6 // indirect
 	github.com/caarlos0/env/v6 v6.0.0
-	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/distribution v2.8.0+incompatible
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.2
